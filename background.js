@@ -1,28 +1,27 @@
 var config = {
-  width  : 720, // 艦娘詳細：幅
-  height : 560, // 艦娘詳細：高
-  x      : 475, // 艦娘詳細Xオフセット
-  y      : 145, // 艦娘詳細Yオフセット
+  width: 724, // 艦娘詳細：幅
+  height: 560,  // 艦娘詳細：高
+  x: 471,    // 艦娘詳細Xオフセット
+  y: 145,    // 艦娘詳細Yオフセット
   
   load : function() {
-    chrome.storage.local.get(['width', 'height', 'x', 'y'], (res) => {
-      if (res.width != null && !isNaN(res.width)) {
-        config.width = parseInt(res.width);
+    chrome.storage.local.get('current_view_type', (res) => {
+      if (res.current_view_type == null) {
+        res.current_view_type = 1;
       }
-      if (res.height != null && !isNaN(res.height)) {
-        config.height = parseInt(res.height);
-      }
-      if (res.x != null && !isNaN(res.x)) {
-        config.x = parseInt(res.x);
-      }
-      if (res.y != null && !isNaN(res.y)) {
-        config.y = parseInt(res.y);
-      }
-      console.log("config loaded: " + config.width + " x " + config.height + " : " + config.x + " x " + config.y);
+      let view_type_key = "view_type_" + res.current_view_type;
+      chrome.storage.local.get(view_type_key, (res) => {
+        if (res[view_type_key] != null) {
+          config.width = parseInt(res[view_type_key].w);
+          config.height = parseInt(res[view_type_key].h);
+          config.x = parseInt(res[view_type_key].x);
+          config.y = parseInt(res[view_type_key].y);
+        }
+        console.log("config loaded: " + config.width + " x " + config.height + " : " + config.x + " x " + config.y);
+      });
     });
   }
 };
-config.load();
 
 var screenshot = {
   content : document.createElement("canvas"),
@@ -74,7 +73,7 @@ var screenshot = {
 };
 
 browser.runtime.onMessage.addListener((message) => {
-  console.log("notify: " + message.type);
+  //console.log("notify: " + message.type);
   if (message.type === "capture") {
     sendMessageTab({ type: "canvasin" });
   }
@@ -158,7 +157,7 @@ function dataURItoBlob(dataURI) {
 }
 
 function notifyCapture(num) {
-  let nid = "kfc";
+  let nid = "kfc_" + num;
   browser.notifications.create(nid, {
     "type": "basic",
     "title": "Kancolle fleet capture",

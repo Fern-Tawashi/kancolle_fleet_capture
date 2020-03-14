@@ -9,19 +9,32 @@
   <p>Kancolle fleet capture configure</p>
   <form>
       <p>
-      <label>Width: (default 720)</label>
+          キャプチャ対象：
+          <select id="view_list">
+              <option value="1">編成【詳細】</option>
+              <option value="2">編成【変更】</option>
+              <option value="3">編成展開【右列】</option>
+              <option value="4">基地航空隊</option>
+              <option value="5">ユーザ定義1</option>
+              <option value="6">ユーザ定義2</option>
+              <option value="7">ユーザ定義3</option>
+              <option value="8">ユーザ定義4</option>
+          </select>
+      </p>
+      <p>
+      <label>Width: </label>
       <input type="number" id="width" value="720">
       </p>
       <p>
-      <label>Height: (default 560)</label>
+      <label>Height: </label>
       <input type="number" id="height" value="560">
       </p>
       <p>
-      <label>Left-top-X: (default 475)</label>
+      <label>Left-top-X: </label>
       <input type="number" id="x" value="475">
       </p>
       <p>
-      <label>Left-top-Y: (default 145)</label>
+      <label>Left-top-Y: </label>
       <input type="number" id="y" value="145">
       </p>
       <button type="submit">Save</button>
