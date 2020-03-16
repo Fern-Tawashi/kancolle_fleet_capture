@@ -1,9 +1,10 @@
 var config = {
-  width: 724, // 艦娘詳細：幅
+  width: 724,   // 艦娘詳細：幅
   height: 560,  // 艦娘詳細：高
-  x: 471,    // 艦娘詳細Xオフセット
-  y: 145,    // 艦娘詳細Yオフセット
-  
+  x: 471,       // 艦娘詳細Xオフセット
+  y: 145,       // 艦娘詳細Yオフセット
+  ss_key: ['ss1', 'ss2', 'ss3', 'ss4', 'ss5', 'ss6'],
+ 
   load : function() {
     chrome.storage.local.get('current_view_type', (res) => {
       if (res.current_view_type == null) {
@@ -61,27 +62,43 @@ var screenshot = {
     };
   },
   saveImage : function() {
-    console.log("save image");
+    //console.log("save image");
     //console.log(dataURItoBlob(screenshot.content.toDataURL()));
-
-    // save the image
-    chrome.downloads.download({
-      'url': URL.createObjectURL(dataURItoBlob(screenshot.content.toDataURL())),
-      'filename': 'myfleet.png',
-    });
+    downloadImage(screenshot.content.toDataURL());
   }
 };
+
+//
+// download image
+//
+function downloadImage(image_data) {
+  chrome.downloads.download({
+    'url': URL.createObjectURL(dataURItoBlob(image_data)),
+    'filename': 'myfleet.png',
+  });
+}
 
 browser.runtime.onMessage.addListener((message) => {
   //console.log("notify: " + message.type);
   if (message.type === "capture") {
-    sendMessageTab({ type: "canvasin" });
+    sendMessageTab({ type: "canvas", mode: "add" });
+  }
+  if (message.type === "fullscreen") {
+    sendMessageTab({ type: "canvas", mode: "one" });
   }
   if (message.type === "image_data") {
-    saveLocal(message.data);
+    if (message.mode === "add") {
+      saveLocal(message.data);
+    }
+    else {
+      downloadImage(message.data);
+    }
   }
   if (message.type === "output") {
     createImage();
+  }
+  if (message.type === "reset") {
+    clearCache();
   }
 });
 
@@ -110,8 +127,6 @@ function saveLocal(image_data) {
 }
 
 function createImage() {
-  const ss_key = ['ss1', 'ss2', 'ss3', 'ss4', 'ss5', 'ss6'];
-
   let num = parseInt(sessionStorage.getItem("num"));
   if (!num) {
     console.log("none capture image");
@@ -121,15 +136,14 @@ function createImage() {
   screenshot.image_max_count = num;
   screenshot.init(num);
 
-  chrome.storage.local.get(ss_key, (item) => {
+  chrome.storage.local.get(config.ss_key, (item) => {
     //console.log(item);
 
     for (let i in item) {
       screenshot.addImage(item[i]);
     }
 
-    chrome.storage.local.remove(ss_key);
-    sessionStorage.clear();
+    clearCache();
   });
 }
 
@@ -166,4 +180,10 @@ function notifyCapture(num) {
   setTimeout(() => {
     browser.notifications.clear(nid);
   }, 1000);
+}
+
+function clearCache() {
+  console.log("clear cache");
+  chrome.storage.local.remove(config.ss_key, () => { });
+  sessionStorage.clear();
 }

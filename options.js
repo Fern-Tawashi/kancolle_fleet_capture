@@ -1,9 +1,9 @@
 var templates = [
   {},
-  { w: 724, h: 560, x: 471, y: 145 },
-  { w: 318, h: 494, x: 882, y: 145 },
-  { w: 480, h: 456, x: 718, y: 211 },
-  { w: 320, h: 480, x: 871, y: 209 },
+  { w: 724, h: 560, x: 471, y: 145 }, // •Ò¬Ú×
+  { w: 318, h: 494, x: 882, y: 145 }, // •Ò¬•ÏX
+  { w: 480, h: 456, x: 718, y: 211 }, // •Ò¬“WŠJ‰E—ñ
+  { w: 320, h: 480, x: 871, y: 209 }, // Šî’nq‹ó‘à
   { w: 1200, h: 720, x: 0, y: 0 },
   { w: 1200, h: 720, x: 0, y: 0 },
   { w: 1200, h: 720, x: 0, y: 0 },
@@ -77,4 +77,5 @@ document.querySelector("#view_list").addEventListener('change', (event) => {
   chrome.storage.local.set({ "current_view_type": selected_id }, () => {
     console.log("change current_view_type: " + selected_id);
   });
+  browser.runtime.sendMessage({ type: "reset" });
 });
