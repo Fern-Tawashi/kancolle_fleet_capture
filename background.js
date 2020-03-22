@@ -3,10 +3,18 @@ var config = {
   height: 560,  // 艦娘詳細：高
   x: 471,       // 艦娘詳細Xオフセット
   y: 145,       // 艦娘詳細Yオフセット
+  horizontal_num: 3, // 編成横アイテム数
+  vertical_num: 2,   // 編成縦アイテム数
   ss_key: ['ss1', 'ss2', 'ss3', 'ss4', 'ss5', 'ss6'],
  
   load : function() {
-    chrome.storage.local.get('current_view_type', (res) => {
+    chrome.storage.local.get(['layout', 'current_view_type'], (res) => {
+      if (res.layout != null) {
+        config.horizontal_num = (res.layout == 1) ? 2 : 3
+        config.vertical_num = (res.layout == 1) ? 3 : 2
+      }
+      console.log("layout: " + config.horizontal_num + " x " + config.vertical_num);
+
       if (res.current_view_type == null) {
         res.current_view_type = 1;
       }
@@ -28,10 +36,12 @@ var screenshot = {
   content : document.createElement("canvas"),
   image_max_count : 6,
   image_load_count : 0,
-  init : function(num) {
-    screenshot.content.width = (num > 1) ? config.width * 2 : config.width;
-    screenshot.content.height = config.height * parseInt((parseInt(num) + 1) / 2);
-    console.log("canvas: " + screenshot.content.width + " x " + screenshot.content.height);
+  init: function (num) {
+    let col = (num > config.horizontal_num) ? config.horizontal_num : num;
+    let row = parseInt((num - 1) / config.horizontal_num) + 1;
+    screenshot.content.width = config.width * col;
+    screenshot.content.height = config.height * row;
+    console.log("canvas: " + col + ":" + row + " " + screenshot.content.width + " x " + screenshot.content.height);
 
     screenshot.image_load_count = 0;
   },
@@ -40,11 +50,10 @@ var screenshot = {
     image.src = img_src;
     image.onload = function() {
 
-      let col = screenshot.image_load_count % 2;
-      let row = parseInt(screenshot.image_load_count / 2);
-
-      let dx = 0 + (config.width * col);
-      let dy = 0 + (config.height * row);
+      let col = screenshot.image_load_count % config.horizontal_num;
+      let row = parseInt(screenshot.image_load_count / config.horizontal_num);
+      let dx = config.width * col;
+      let dy = config.height * row;
 
       let context = screenshot.content.getContext("2d");
 

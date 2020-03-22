@@ -1,9 +1,9 @@
 var templates = [
   {},
-  { w: 724, h: 560, x: 471, y: 145 }, // •Ò¬Ú×
-  { w: 318, h: 494, x: 882, y: 145 }, // •Ò¬•ÏX
-  { w: 480, h: 456, x: 718, y: 211 }, // •Ò¬“WŠJ‰E—ñ
-  { w: 320, h: 480, x: 871, y: 209 }, // Šî’nq‹ó‘à
+  { w: 724, h: 560, x: 471, y: 145 }, // ç·¨æˆè©³ç´°
+  { w: 318, h: 494, x: 882, y: 145 }, // ç·¨æˆå¤‰æ›´
+  { w: 480, h: 456, x: 718, y: 211 }, // ç·¨æˆå±•é–‹å³åˆ—
+  { w: 320, h: 480, x: 871, y: 209 }, // åŸºåœ°èˆªç©ºéšŠ
   { w: 1200, h: 720, x: 0, y: 0 },
   { w: 1200, h: 720, x: 0, y: 0 },
   { w: 1200, h: 720, x: 0, y: 0 },
@@ -26,7 +26,6 @@ function restore_init() {
 function saveOption(event) {
   let selected_value = document.querySelector("#view_list").value;
   let data_key = "view_type_" + selected_value;
-
   let view_data = {
     w: parseInt(document.querySelector("#width").value),
     h: parseInt(document.querySelector("#height").value),
@@ -37,12 +36,12 @@ function saveOption(event) {
   chrome.storage.local.set({ [data_key]: view_data }, () => {
     console.log("config saved: " + view_data);
   });
+
   event.preventDefault();
 }
 
 function loadOption(type_num) {
   let data_key = "view_type_" + type_num;
-  
   chrome.storage.local.get(data_key, (res) => {
     if (res[data_key] == null) {
       res[data_key] = templates[type_num];
@@ -67,15 +66,31 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector("#view_list").value = init_select;
     loadOption(init_select);
   });
+
+  chrome.storage.local.get("layout", (res) => {
+    if (res["layout"] == null) {
+      res["layout"] = 0;
+    }
+    document.querySelector('input[name="layout"][value="' + res["layout"] + '"]').checked = true;
+  });
 });
 
 document.querySelector("form").addEventListener("submit", saveOption);
 
-document.querySelector("#view_list").addEventListener('change', (event) => {
-  selected_id = event.target.value;
+document.querySelector("#view_list").addEventListener('change', (e) => {
+  selected_id = e.target.value;
   loadOption(selected_id);
   chrome.storage.local.set({ "current_view_type": selected_id }, () => {
     console.log("change current_view_type: " + selected_id);
   });
   browser.runtime.sendMessage({ type: "reset" });
+});
+
+document.querySelectorAll('input[name="layout"]').forEach(div => {
+  div.addEventListener('change', function (e) {
+    let layout = e.target.value;;
+    chrome.storage.local.set({ "layout": layout }, () => {
+      console.log("layout: " + layout);
+    });
+  });
 });
