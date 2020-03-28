@@ -5,6 +5,7 @@ var config = {
   y: 145,       // 艦娘詳細Yオフセット
   horizontal_num: 3, // 編成横アイテム数
   vertical_num: 2,   // 編成縦アイテム数
+  view_type: 1,
   ss_key: ['ss1', 'ss2', 'ss3', 'ss4', 'ss5', 'ss6'],
  
   load : function() {
@@ -18,6 +19,8 @@ var config = {
       if (res.current_view_type == null) {
         res.current_view_type = 1;
       }
+      config.view_type = res.current_view_type;
+
       let view_type_key = "view_type_" + res.current_view_type;
       chrome.storage.local.get(view_type_key, (res) => {
         if (res[view_type_key] != null) {
@@ -34,39 +37,56 @@ var config = {
 
 var screenshot = {
   content : document.createElement("canvas"),
-  image_max_count : 6,
-  image_load_count : 0,
+  image_max_count: 6,
+  image_load_count: 0,
   init: function (num) {
     let col = (num > config.horizontal_num) ? config.horizontal_num : num;
     let row = parseInt((num - 1) / config.horizontal_num) + 1;
     screenshot.content.width = config.width * col;
     screenshot.content.height = config.height * row;
     console.log("canvas: " + col + ":" + row + " " + screenshot.content.width + " x " + screenshot.content.height);
-
     screenshot.image_load_count = 0;
   },
   addImage : function(img_src) {
     let image = new Image();
     image.src = img_src;
     image.onload = function() {
-
       let col = screenshot.image_load_count % config.horizontal_num;
       let row = parseInt(screenshot.image_load_count / config.horizontal_num);
       let dx = config.width * col;
       let dy = config.height * row;
 
       let context = screenshot.content.getContext("2d");
-
       //context.mozImageSmoothingEnabled = false; 非推奨
       context.webkitImageSmoothingEnabled = false;
       context.msImageSmoothingEnabled = false;
       context.imageSmoothingEnabled = false;
-      context.drawImage(image, config.x, config.y, config.width, config.height, dx, dy, config.width, config.height);
+      context.globalCompositeOperation = 'xor';
 
+      drawImage();
       screenshot.image_load_count++;
       console.log("image_load_count: " + screenshot.image_load_count + " / " + screenshot.image_max_count);
-      if (screenshot.image_load_count >= screenshot.image_max_count) {
-        screenshot.saveImage();
+
+      function drawImage() {
+        drawMask(() => {
+          context.drawImage(image, config.x, config.y, config.width, config.height, dx, dy, config.width, config.height);
+          if (screenshot.image_load_count >= screenshot.image_max_count) {
+            screenshot.saveImage();
+          }
+        });
+      }
+
+      function drawMask(next_process) {
+        var imgMask = new Image();
+        imgMask.onload = () => {
+          context.drawImage(imgMask, 0, 0, imgMask.width, imgMask.height, dx, dy, imgMask.width, imgMask.height);
+          next_process();
+        };
+        imgMask.onerror = () => {
+          console.log("mask image load failure");
+          next_process();
+        };
+        imgMask.src = './mask_image/mask' + config.view_type + '.png';
       }
     };
   },
@@ -74,6 +94,11 @@ var screenshot = {
     //console.log("save image");
     //console.log(dataURItoBlob(screenshot.content.toDataURL()));
     downloadImage(screenshot.content.toDataURL());
+  },
+  drawMask : function () {
+    let context = screenshot.content.getContext("2d");
+    context.globalCompositeOperation = 'source-in';
+    context.fillRect(0, 0, 50, 50);
   }
 };
 
