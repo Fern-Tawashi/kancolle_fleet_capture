@@ -6,15 +6,21 @@ var config = {
   horizontal_num: 3, // 編成横アイテム数
   vertical_num: 2,   // 編成縦アイテム数
   view_type: 1,
+  enable_mask: false,
   ss_key: ['ss1', 'ss2', 'ss3', 'ss4', 'ss5', 'ss6'],
  
   load : function() {
-    chrome.storage.local.get(['layout', 'current_view_type'], (res) => {
+    chrome.storage.local.get(['layout', 'mask', 'current_view_type'], (res) => {
       if (res.layout != null) {
         config.horizontal_num = (res.layout == 1) ? 2 : 3
         config.vertical_num = (res.layout == 1) ? 3 : 2
       }
       console.log("layout: " + config.horizontal_num + " x " + config.vertical_num);
+
+      if (res.mask != null) {
+        config.enable_mask = res.mask;
+      }
+      console.log("enable_mask: " + res.mask);
 
       if (res.current_view_type == null) {
         res.current_view_type = 1;
@@ -38,6 +44,7 @@ var config = {
 var screenshot = {
   content : document.createElement("canvas"),
   image_max_count: 6,
+  image_order: 0,
   image_load_count: 0,
   init: function (num) {
     let col = (num > config.horizontal_num) ? config.horizontal_num : num;
@@ -45,14 +52,15 @@ var screenshot = {
     screenshot.content.width = config.width * col;
     screenshot.content.height = config.height * row;
     console.log("canvas: " + col + ":" + row + " " + screenshot.content.width + " x " + screenshot.content.height);
+    screenshot.image_order = 0;
     screenshot.image_load_count = 0;
   },
-  addImage : function(img_src) {
+  addImage: function (img_src) {
     let image = new Image();
     image.src = img_src;
     image.onload = function() {
-      let col = screenshot.image_load_count % config.horizontal_num;
-      let row = parseInt(screenshot.image_load_count / config.horizontal_num);
+      let col = screenshot.image_order % config.horizontal_num;
+      let row = parseInt(screenshot.image_order / config.horizontal_num);
       let dx = config.width * col;
       let dy = config.height * row;
 
@@ -64,19 +72,26 @@ var screenshot = {
       context.globalCompositeOperation = 'xor';
 
       drawImage();
-      screenshot.image_load_count++;
-      console.log("image_load_count: " + screenshot.image_load_count + " / " + screenshot.image_max_count);
+      screenshot.image_order++;
 
       function drawImage() {
         drawMask(() => {
           context.drawImage(image, config.x, config.y, config.width, config.height, dx, dy, config.width, config.height);
+          screenshot.image_load_count++;
+          console.log("image_load_count: " + screenshot.image_load_count + " / " + screenshot.image_max_count);
           if (screenshot.image_load_count >= screenshot.image_max_count) {
+            console.log("saveImage");
             screenshot.saveImage();
           }
         });
       }
 
       function drawMask(next_process) {
+        if (!config.enable_mask) {
+          next_process();
+          return;
+        }
+
         var imgMask = new Image();
         imgMask.onload = () => {
           context.drawImage(imgMask, 0, 0, imgMask.width, imgMask.height, dx, dy, imgMask.width, imgMask.height);
@@ -172,11 +187,9 @@ function createImage() {
 
   chrome.storage.local.get(config.ss_key, (item) => {
     //console.log(item);
-
     for (let i in item) {
       screenshot.addImage(item[i]);
     }
-
     clearCache();
   });
 }

@@ -67,11 +67,16 @@ document.addEventListener('DOMContentLoaded', () => {
     loadOption(init_select);
   });
 
-  chrome.storage.local.get("layout", (res) => {
+  chrome.storage.local.get(["layout", "mask"], (res) => {
     if (res["layout"] == null) {
       res["layout"] = 0;
     }
     document.querySelector('input[name="layout"][value="' + res["layout"] + '"]').checked = true;
+
+    if (res["mask"] == null) {
+      res["mask"] = false;
+    }
+    document.querySelector('input[name="mask"]').checked = res["mask"];
   });
 });
 
@@ -88,9 +93,16 @@ document.querySelector("#view_list").addEventListener('change', (e) => {
 
 document.querySelectorAll('input[name="layout"]').forEach(div => {
   div.addEventListener('change', function (e) {
-    let layout = e.target.value;;
+    let layout = e.target.value;
     chrome.storage.local.set({ "layout": layout }, () => {
       console.log("layout: " + layout);
     });
+  });
+});
+
+document.querySelector('input[name="mask"]').addEventListener('change', (e) => {
+  let mask = e.target.checked;
+  chrome.storage.local.set({ "mask": mask }, () => {
+    console.log("mask: " + mask);
   });
 });
