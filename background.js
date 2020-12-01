@@ -42,10 +42,11 @@ var config = {
 };
 
 var screenshot = {
-  content : document.createElement("canvas"),
+  content: document.createElement("canvas"),
   image_max_count: 6,
   image_order: 0,
   image_load_count: 0,
+  addition_image: 0,
   init: function (num) {
     let col = (num > config.horizontal_num) ? config.horizontal_num : num;
     let row = parseInt((num - 1) / config.horizontal_num) + 1;
@@ -56,64 +57,88 @@ var screenshot = {
     screenshot.image_load_count = 0;
   },
   addImage: function (img_src) {
-    let image = new Image();
-    image.src = img_src;
-    image.onload = function() {
-      let col = screenshot.image_order % config.horizontal_num;
-      let row = parseInt(screenshot.image_order / config.horizontal_num);
-      let dx = config.width * col;
-      let dy = config.height * row;
+    return new Promise((resolution, rejection) => {
 
-      let context = screenshot.content.getContext("2d");
-      //context.mozImageSmoothingEnabled = false; ”ñ„§
-      context.webkitImageSmoothingEnabled = false;
-      context.msImageSmoothingEnabled = false;
-      context.imageSmoothingEnabled = false;
-      context.globalCompositeOperation = 'xor';
+      let image = new Image();
+      image.src = img_src;
+      image.onload = function() {
+        let col = screenshot.image_order % config.horizontal_num;
+        let row = parseInt(screenshot.image_order / config.horizontal_num);
+        let dx = config.width * col;
+        let dy = config.height * row;
 
-      drawImage();
-      screenshot.image_order++;
+        let context = screenshot.content.getContext("2d");
+        //context.mozImageSmoothingEnabled = false; ”ñ„§
+        context.webkitImageSmoothingEnabled = false;
+        context.msImageSmoothingEnabled = false;
+        context.imageSmoothingEnabled = false;
+        context.globalCompositeOperation = 'xor';
 
-      function drawImage() {
-        drawMask(() => {
-          context.drawImage(image, config.x, config.y, config.width, config.height, dx, dy, config.width, config.height);
-          screenshot.image_load_count++;
-          console.log("image_load_count: " + screenshot.image_load_count + " / " + screenshot.image_max_count);
+        screenshot.image_order++;
+
+        drawImage(() => {
+          //Å‘å–‡”‚É’B‚µ‚½‚ç‹­§DL
           if (screenshot.image_load_count >= screenshot.image_max_count) {
-            console.log("saveImage");
-            screenshot.saveImage();
+            drawAddition(screenshot.addition_image, () => {
+              downloadImage(screenshot.content.toDataURL());
+            });
           }
-        });
-      }
 
-      function drawMask(next_process) {
-        if (!config.enable_mask) {
-          next_process();
-          return;
+          resolution();
+        });
+
+        function drawImage(next_process) {
+          drawMask(() => {
+            context.drawImage(image, config.x, config.y, config.width, config.height, dx, dy, config.width, config.height);
+
+            screenshot.image_load_count++;
+            console.log("image_load_count: " + screenshot.image_load_count + " / " + screenshot.image_max_count);
+
+            next_process();
+          });
         }
 
-        var imgMask = new Image();
-        imgMask.onload = () => {
-          context.drawImage(imgMask, 0, 0, imgMask.width, imgMask.height, dx, dy, imgMask.width, imgMask.height);
-          next_process();
-        };
-        imgMask.onerror = () => {
-          console.log("mask image load failure");
-          next_process();
-        };
-        imgMask.src = './mask_image/mask' + config.view_type + '.png';
-      }
-    };
-  },
-  saveImage : function() {
-    //console.log("save image");
-    //console.log(dataURItoBlob(screenshot.content.toDataURL()));
-    downloadImage(screenshot.content.toDataURL());
-  },
-  drawMask : function () {
-    let context = screenshot.content.getContext("2d");
-    context.globalCompositeOperation = 'source-in';
-    context.fillRect(0, 0, 50, 50);
+        function drawMask(next_process) {
+          if (!config.enable_mask) {
+            next_process();
+            return;
+          }
+
+          let imgMask = new Image();
+          imgMask.onload = () => {
+            context.drawImage(imgMask, 0, 0, imgMask.width, imgMask.height, dx, dy, imgMask.width, imgMask.height);
+            next_process();
+          };
+          imgMask.onerror = () => {
+            console.log("mask image load failure");
+            next_process();
+          };
+          imgMask.src = './mask_image/mask' + config.view_type + '.png';
+        }
+
+        /**
+         * ’Ç‰Á‰æ‘œ·‚µž‚Ýi‘ænŠÍ‘àj
+         */
+        function drawAddition(no, next_process) {
+          if (no == 0) {
+            next_process();
+            return;
+          }
+          let img = new Image();
+          img.onload = () => {
+            let context = screenshot.content.getContext("2d");
+            context.globalCompositeOperation = 'source-over';
+            context.drawImage(img, 0, 0, img.width, img.height, 0, 0, img.width, img.height);
+            next_process();
+          };
+          img.onerror = () => {
+            console.log("fleet header image load failure.");
+            next_process();
+          };
+          img.src = './mask_image/fleet' + no + '.png';
+        }
+      };
+    });
   }
 };
 
@@ -148,6 +173,14 @@ browser.runtime.onMessage.addListener((message) => {
   }
   if (message.type === "reset") {
     clearCache();
+  }
+  if (message.type === "addition_1") {
+    console.log("addition_1");
+    screenshot.addition_image = 1
+  }
+  if (message.type === "addition_2") {
+    console.log("addition_2");
+    screenshot.addition_image = 2
   }
 });
 
@@ -187,10 +220,17 @@ function createImage() {
 
   chrome.storage.local.get(config.ss_key, (item) => {
     //console.log(item);
+
+    let funcs = [];
     for (let i in item) {
-      screenshot.addImage(item[i]);
+      funcs.push(screenshot.addImage(item[i]));
     }
-    clearCache();
+
+    Promise.all(funcs).then(function (results) {
+      clearCache();
+
+      screenshot.addition_image = 0;
+    });
   });
 }
 
