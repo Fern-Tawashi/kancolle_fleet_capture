@@ -1,10 +1,10 @@
 var config = {
-  width: 724,   // �͖��ڍׁF��
-  height: 560,  // �͖��ڍׁF��
-  x: 471,       // �͖��ڍ�X�I�t�Z�b�g
-  y: 145,       // �͖��ڍ�Y�I�t�Z�b�g
-  horizontal_num: 3, // �Ґ����A�C�e����
-  vertical_num: 2,   // �Ґ��c�A�C�e����
+  width: 724,   // 艦娘詳細：幅
+  height: 560,  // 艦娘詳細：高
+  x: 471,       // 艦娘詳細Xオフセット
+  y: 145,       // 艦娘詳細Yオフセット
+  horizontal_num: 3, // 編成横アイテム数
+  vertical_num: 2,   // 編成縦アイテム数
   view_type: 1,
   enable_mask: false,
   ss_key: ['ss1', 'ss2', 'ss3', 'ss4', 'ss5', 'ss6'],
@@ -57,7 +57,7 @@ var screenshot = {
     screenshot.image_load_count = 0;
   },
   addImage: function (img_src) {
-    return new Promise((resolution, rejection) => {
+    return new Promise((resolve, reject) => {
 
       let image = new Image();
       image.src = img_src;
@@ -68,7 +68,7 @@ var screenshot = {
         let dy = config.height * row;
 
         let context = screenshot.content.getContext("2d");
-        //context.mozImageSmoothingEnabled = false; �񐄏�
+        //context.mozImageSmoothingEnabled = false; 非推奨
         context.webkitImageSmoothingEnabled = false;
         context.msImageSmoothingEnabled = false;
         context.imageSmoothingEnabled = false;
@@ -77,14 +77,14 @@ var screenshot = {
         screenshot.image_order++;
 
         drawImage(() => {
-          //�ő喇���ɒB�����狭��DL
+          //最大枚数に達したら強制DL
           if (screenshot.image_load_count >= screenshot.image_max_count) {
             drawAddition(screenshot.addition_image, () => {
               downloadImage(screenshot.content.toDataURL());
             });
           }
 
-          resolution();
+          resolve();
         });
 
         function drawImage(next_process) {
@@ -117,7 +117,7 @@ var screenshot = {
         }
 
         /**
-         * �ǉ��摜�������݁i��n�͑��j
+         * 追加画像差し込み（第n艦隊）
          */
         function drawAddition(no, next_process) {
           if (no == 0) {
@@ -173,14 +173,16 @@ browser.runtime.onMessage.addListener((message) => {
   }
   if (message.type === "reset") {
     clearCache();
+    screenshot.addition_image = 0;
   }
-  if (message.type === "addition_1") {
-    console.log("addition_1");
-    screenshot.addition_image = 1
+  if (message.type === "modeselect") {
+    clearCache();
+    screenshot.addition_image = 0;
+    modeselect(message.num);
   }
-  if (message.type === "addition_2") {
-    console.log("addition_2");
-    screenshot.addition_image = 2
+  if (message.type === "addition") {
+    notifySpecifyFleetNumber(message.num);
+    screenshot.addition_image = message.num;
   }
 });
 
@@ -226,7 +228,7 @@ function createImage() {
       funcs.push(screenshot.addImage(item[i]));
     }
 
-    Promise.all(funcs).then(function (results) {
+    Promise.all(funcs).then(() => {
       clearCache();
 
       screenshot.addition_image = 0;
@@ -257,20 +259,78 @@ function dataURItoBlob(dataURI) {
   return bb;
 }
 
+/**
+ * キャプチャ時の通知
+ */
 function notifyCapture(num) {
   let nid = "kfc_" + num;
   browser.notifications.create(nid, {
     "type": "basic",
     "title": "Kancolle fleet capture",
-    "message": num + " / 6"
+    "message": num + " / 6",
   });
   setTimeout(() => {
     browser.notifications.clear(nid);
   }, 1000);
 }
 
+/**
+ * モード切替時の通知
+ */
+function notifyChangeMode(num) {
+  let nid = "mode_" + num;
+  let mode_title = ["編成【詳細】", "編成【変更】", "編成展開【右列】", "基地航空隊"];
+  browser.notifications.create(nid, {
+    "type": "basic",
+    "title": "Kancolle fleet capture",
+    "message": mode_title[num - 1],
+  });
+  setTimeout(() => {
+    browser.notifications.clear(nid);
+  }, 2000);
+}
+
+/**
+ * 連合艦隊番号設定時の通知
+ */
+function notifySpecifyFleetNumber(num) {
+  let nid = "add_" + num;
+  browser.notifications.create(nid, {
+    "type": "basic",
+    "title": "Kancolle fleet capture",
+    "message": "",
+    "iconUrl": './mask_image/fleet' + num + '.png'
+  });
+  setTimeout(() => {
+    browser.notifications.clear(nid);
+  }, 1000);
+}
+
+/**
+ * ローカルストレージ削除
+ * C:\Users\<user>\AppData\Roaming\Mozilla\Firefox\Profiles\.default\storage\default\moz-extension\idb\
+ */
 function clearCache() {
   console.log("clear cache");
   chrome.storage.local.remove(config.ss_key, () => { });
   sessionStorage.clear();
+}
+
+/**
+ * モード切替
+ */
+function modeselect(num) {
+  let new_view_type = config.view_type + num;
+  if (new_view_type > 4) {
+    new_view_type = 1;
+  }
+  if (new_view_type < 1) {
+    new_view_type = 4;
+  }
+  console.log("change current_view_type: " + new_view_type);
+
+  chrome.storage.local.set({ "current_view_type": new_view_type }, () => {
+    notifyChangeMode(new_view_type);
+    config.load();
+  });
 }
