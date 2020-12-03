@@ -184,6 +184,9 @@ browser.runtime.onMessage.addListener((message) => {
     notifySpecifyFleetNumber(message.num);
     screenshot.addition_image = message.num;
   }
+  if (message.type === "destroy") {
+    clearCache();
+  }
 });
 
 function saveLocal(image_data) {

@@ -28,3 +28,10 @@ window.addEventListener("keydown", (event) => {
     browser.runtime.sendMessage({ type: "addition", num: 4 });
   }
 });
+
+window.addEventListener('beforeunload', function (event) {
+  event.preventDefault();
+  event.returnValue = '';
+
+  browser.runtime.sendMessage({ type: "destroy" });
+});
