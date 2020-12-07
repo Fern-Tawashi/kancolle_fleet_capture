@@ -354,7 +354,12 @@ function modeselect(num) {
  * パラメータ初期化
  */
 (function () {
-  chrome.storage.local.set(initial_data, () => {
-    console.log("All parameter initialized");
+  chrome.storage.local.get("current_view_type", (res) => {
+    console.log(res.current_view_type);
+    if (res.current_view_type == null) {
+      chrome.storage.local.set(initial_data, () => {
+        console.log("All parameter initialized");
+      });
+    }
   });
 })();

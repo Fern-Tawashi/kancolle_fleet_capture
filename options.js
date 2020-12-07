@@ -1,3 +1,6 @@
+/**
+ * 座標登録ボタン
+ */
 function saveOption(event) {
   const selected_value = document.querySelector("#view_list").value;
   const data_key = "view_type_" + selected_value;
@@ -7,6 +10,12 @@ function saveOption(event) {
     x: parseInt(document.querySelector("#x").value),
     y: parseInt(document.querySelector("#y").value)
   };
+
+  if (view_data.w > 1200 || view_data.h > 720 || view_data.x > 1200 || view_data.y > 720 ||
+      view_data.w < 1 || view_data.h < 1 || view_data.x < 0 || view_data.y < 0) {
+    alert("座標が 1200x720 を超えています");
+    return;
+  }
 
   chrome.storage.local.set({ [data_key]: view_data }, () => {
     console.log("config saved: " + view_data);
@@ -121,7 +130,10 @@ document.querySelectorAll('input[name="layout"]').forEach(div => {
 document.querySelector('#input_mask').addEventListener('change', (e) => {
   const current_view_type = document.querySelector("#view_list").value;
   const file = e.target.files[0];
-  //console.log(file);
+  if (file.size > (1024 * 1024 * 3)) {
+    window.alert("ファイルサイズが3MBを超えています");
+    return;
+  }
 
   const img = document.querySelector("#mask_src");
 
@@ -157,7 +169,10 @@ document.querySelector('#delmask').addEventListener('click', (e) => {
 document.querySelectorAll('input[name="input_tag"]').forEach(btn => {
   btn.addEventListener('change', (e) => {
     const file = e.target.files[0];
-    //console.log(file);
+    if (file.size > (1024 * 1024 * 3)) {
+      window.alert("ファイルサイズが3MBを超えています");
+      return;
+    }
 
     const additional_no = e.target.dataset.no;
     const img = document.querySelector("#tagsrc_" + additional_no);

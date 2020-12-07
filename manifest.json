@@ -3,7 +3,7 @@
     "manifest_version": 2,
     "name": "Kancolle fleet capture",
     "homepage_url": "https://twitter.com/mtm13th",
-    "version": "1.61",
+    "version": "1.63",
 
     "background": {
         "scripts": [ "config.js", "background.js" ]

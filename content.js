@@ -30,7 +30,7 @@ window.addEventListener("keydown", (event) => {
 });
 
 /**
- * Œë•Â‚¶–h~
+ * èª¤é–‰ã˜é˜²æ­¢
  */
 window.addEventListener('beforeunload', (event) => {
   event.preventDefault();
