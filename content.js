@@ -29,9 +29,11 @@ window.addEventListener("keydown", (event) => {
   }
 });
 
-window.addEventListener('beforeunload', function (event) {
+/**
+ * 誤閉じ防止
+ */
+window.addEventListener('beforeunload', (event) => {
   event.preventDefault();
   event.returnValue = '';
-
   browser.runtime.sendMessage({ type: "destroy" });
 });
