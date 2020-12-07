@@ -1,8 +1,8 @@
 var config = {
-  width: 0,   // 艦娘詳細：幅
-  height: 0,  // 艦娘詳細：高
-  x: 1200,    // 艦娘詳細Xオフセット
-  y: 720,     // 艦娘詳細Yオフセット
+  x: 0,
+  y: 0,
+  width: 1200,
+  height: 720,
   horizontal_num: 3, // 編成横アイテム数
   vertical_num: 2,   // 編成縦アイテム数
   view_type: 1,
@@ -21,7 +21,7 @@ var config = {
       }
       config.view_type = parseInt(res.current_view_type);
 
-      let view_type_key = "view_type_" + res.current_view_type;
+      const view_type_key = "view_type_" + res.current_view_type;
       chrome.storage.local.get(view_type_key, (res) => {
         if (res[view_type_key] != null) {
           config.width = parseInt(res[view_type_key].w);
@@ -228,7 +228,7 @@ function saveLocal(image_data) {
 }
 
 function createImage() {
-  let num = parseInt(sessionStorage.getItem("num"));
+  const num = parseInt(sessionStorage.getItem("num"));
   if (!num) {
     console.log("none capture image");
     return;
@@ -351,29 +351,10 @@ function modeselect(num) {
 }
 
 /**
- * 未初期化時
+ * パラメータ初期化
  */
 (function () {
-  const data = {
-    current_view_type: 1,
-    view_type_1: { w: 724, h: 560, x: 471, y: 145 },
-    view_type_2: { w: 318, h: 354, x: 882, y: 145 },
-    view_type_3: { w: 480, h: 456, x: 718, y: 211 },
-    view_type_4: { w: 320, h: 480, x: 871, y: 209 },
-    view_type_5: { w: 1200, h: 720, x: 0, y: 0 },
-    view_type_6: { w: 1200, h: 720, x: 0, y: 0 },
-    view_type_7: { w: 1200, h: 720, x: 0, y: 0 },
-    view_type_8: { w: 1200, h: 720, x: 0, y: 0 },
-    mask_file_1: "./mask_image/mask1.png",
-    mask_file_2: "./mask_image/mask2.png",
-    mask_file_3: "./mask_image/mask3.png",
-    additional_file_1: "./mask_image/fleet1.png",
-    additional_file_2: "./mask_image/fleet2.png"
-  };
-
-  chrome.storage.local.get("current_view_type", (res) => {
-    chrome.storage.local.set(data, () => {
-      console.log("initialized");
-    });
+  chrome.storage.local.set(initial_data, () => {
+    console.log("All parameter initialized");
   });
-})()
+})();

@@ -1,15 +1,3 @@
-var templates = [
-  {},
-  { w: 724, h: 560, x: 471, y: 145 }, // 編成詳細
-  { w: 318, h: 354, x: 882, y: 145 }, // 編成変更
-  { w: 480, h: 456, x: 718, y: 211 }, // 編成展開右列
-  { w: 320, h: 480, x: 871, y: 209 }, // 基地航空隊
-  { w: 1200, h: 720, x: 0, y: 0 },
-  { w: 1200, h: 720, x: 0, y: 0 },
-  { w: 1200, h: 720, x: 0, y: 0 },
-  { w: 1200, h: 720, x: 0, y: 0 }
-];
-
 function saveOption(event) {
   const selected_value = document.querySelector("#view_list").value;
   const data_key = "view_type_" + selected_value;
@@ -68,57 +56,14 @@ function loadAdditionalImage() {
 /**
  * 工場出荷時に戻す 
  */
-function loadDefault(next_process){
-  const funcs = [];
-  funcs.push(clearStorage());
-  funcs.push(setCoordinate());
-  funcs.push(setImage(null, "mask_file_1", "./mask_image/mask1.png"));
-  funcs.push(setImage(null, "mask_file_2", "./mask_image/mask2.png"));
-  funcs.push(setImage(null, "mask_file_3", "./mask_image/mask3.png"));
-  funcs.push(setImage(null, "additional_file_1", "./mask_image/fleet1.png"));
-  funcs.push(setImage(null, "additional_file_2", "./mask_image/fleet2.png"));
-
-  Promise.all(funcs).then(() => {
-    chrome.storage.local.set({ "current_view_type": 1 }, () => {
+function loadDefault(next_process) {
+  chrome.storage.local.clear(() => {
+    console.log("cleared all storage");
+    chrome.storage.local.set(initial_data, () => {
+      console.log("initialized all parameter");
       next_process();
     });
   });
-
-  function clearStorage(){
-    return new Promise((resolve, reject) => {
-      chrome.storage.local.clear(() => {
-        console.log("clear storage");
-        resolve();
-      });
-    });
-  }
-
-  function setCoordinate() {
-    return new Promise((resolve, reject) => {
-      const data = {};
-      for (let i = 1; i <= 8; i++) {
-        const view_type_key = "view_type_" + i;
-        data[view_type_key] = templates[i];
-      }
-      chrome.storage.local.set(data, () => {
-        console.log("set coordinate: " + Object.keys(data));
-        resolve();
-      });
-    });
-  }
-
-  function setImage(selector, key, path) {
-    return new Promise((resolve, reject) => {
-      chrome.storage.local.set({ [key]: path }, () => {
-        if (selector) {
-          const img = document.querySelector(selector);
-          img.src = path;
-        }
-        console.log("set default: " + key);
-        resolve();
-      });
-    });
-  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
