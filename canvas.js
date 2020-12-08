@@ -8,11 +8,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     window.requestAnimationFrame(function () {
       const canvas = document.querySelectorAll('canvas');
       const image_data = canvas[0].toDataURL('image/png');
+
       chrome.runtime.sendMessage({ type: "image_data", data: image_data, mode: request.mode });
       /*
       canvas[0].toBlob((blob) => {
         console.log(blob);
-        chrome.runtime.sendMessage({ type: "image_data", data: blob });
       }, 'image/png');
       */
     });

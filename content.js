@@ -1,3 +1,7 @@
+/**
+ * ゲーム内のキー入力バッティングを考慮しフレーム外で処理させる
+ * ※左右余白のクリック（入力フォーカス移動）が必要
+ */
 window.addEventListener("keydown", (event) => {
   //console.log(event.keyCode);
   if (event.keyCode == 83) { // 's'
