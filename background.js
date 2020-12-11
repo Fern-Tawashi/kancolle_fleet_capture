@@ -9,15 +9,14 @@ var config = {
   ss_key: ['ss1', 'ss2', 'ss3', 'ss4', 'ss5', 'ss6'],
 
   /**
-   * config値の参照は画像出力時なので基本的に読み込み待ちしなくて良い
+   * load直後に参照する場合は next_process を使う
    */
-  load : function() {
-    chrome.storage.local.get(['layout', 'mask', 'current_view_type'], (res) => {
+  load : function(next_process) {
+    chrome.storage.local.get(['layout', 'current_view_type'], (res) => {
       if (res.layout != null) {
         config.horizontal_num = (res.layout == 1) ? 2 : 3
         config.vertical_num = (res.layout == 1) ? 3 : 2
       }
-      console.log("layout: " + config.horizontal_num + " x " + config.vertical_num);
 
       if (res.current_view_type == null) {
         res.current_view_type = 1;
@@ -32,7 +31,10 @@ var config = {
           config.x = parseInt(res[view_type_key].x);
           config.y = parseInt(res[view_type_key].y);
         }
-        console.log("config loaded: " + config.width + " x " + config.height + " : " + config.x + " x " + config.y);
+        console.log("config: " + config.view_type + ", " + config.horizontal_num + "x" + config.vertical_num + ", " + config.width + "x" + config.height + ", " + config.x + "x" + config.y);
+        if (next_process != null) {
+          next_process();
+        }
       });
     });
   }
@@ -40,83 +42,44 @@ var config = {
 
 var screenshot = {
   content: document.createElement("canvas"),
-  image_max_count: 6,
-  image_order: 0,
+  capture_count: 0,
+  image_max_count: 0,
   image_load_count: 0,
   addition_image: 0,
-  init: function (num) {
+  init: function () {
+    const num = screenshot.image_max_count;
     const col = (num > config.horizontal_num) ? config.horizontal_num : num;
     const row = parseInt((num - 1) / config.horizontal_num) + 1;
     screenshot.content.width = config.width * col;
     screenshot.content.height = config.height * row;
-    console.log("canvas: " + col + ":" + row + " " + screenshot.content.width + " x " + screenshot.content.height);
-    screenshot.image_order = 0;
     screenshot.image_load_count = 0;
   },
   addImage: function (img_src) {
-    return new Promise((resolve, reject) => {
-      const image = new Image();
-      image.src = img_src;
-      image.onload = function() {
-        const col = screenshot.image_order % config.horizontal_num;
-        const row = parseInt(screenshot.image_order / config.horizontal_num);
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = function() {
+        const col = screenshot.image_load_count % config.horizontal_num;
+        const row = parseInt(screenshot.image_load_count / config.horizontal_num);
         const dx = config.width * col;
         const dy = config.height * row;
 
-        let context = screenshot.content.getContext("2d");
+        const context = screenshot.content.getContext("2d");
         //context.mozImageSmoothingEnabled = false; 非推奨
         context.webkitImageSmoothingEnabled = false;
         context.msImageSmoothingEnabled = false;
         context.imageSmoothingEnabled = false;
 
-        screenshot.image_order++;
+        context.drawImage(img, dx, dy);
+        screenshot.image_load_count++;
+        console.log("image_load_count: " + screenshot.image_load_count + " / " + screenshot.image_max_count);
 
-        drawImage(() => {
-          //最大枚数に達したら強制DL
-          if (screenshot.image_load_count >= screenshot.image_max_count) {
-            drawAddition(screenshot.addition_image, () => {
-              downloadImage(screenshot.content.toDataURL());
-            });
-          }
-
-          resolve();
-        });
-
-        function drawImage(next_process) {
-          drawMask(() => {
-            context.drawImage(image, config.x, config.y, config.width, config.height, dx, dy, config.width, config.height);
-
-            screenshot.image_load_count++;
-            console.log("image_load_count: " + screenshot.image_load_count + " / " + screenshot.image_max_count);
-
-            next_process();
+        //最大枚数に達したら強制DL
+        if (screenshot.image_load_count >= screenshot.image_max_count) {
+          drawAddition(screenshot.addition_image, () => {
+            downloadImage(screenshot.content.toDataURL());
           });
         }
-
-        /**
-         * マスク画像処理
-         */
-        function drawMask(next_process) {
-          const img = new Image();
-          const key = "mask_file_" + config.view_type;
-          chrome.storage.local.get(key, (res) => {
-            if (res[key]) {
-              img.onload = () => {
-                context.globalCompositeOperation = 'xor';
-                context.drawImage(img, 0, 0, img.width, img.height, dx, dy, img.width, img.height);
-                next_process();
-              };
-              img.onerror = () => {
-                console.log("mask image load failure");
-                next_process();
-              };
-              img.src = res[key];
-            }
-            else {
-              next_process();
-            }
-          });
-        }
+        resolve();
 
         /**
          * 追加画像差し込み（第n艦隊）
@@ -132,7 +95,6 @@ var screenshot = {
             if (res[key]) {
               const img = new Image();
               img.onload = () => {
-                context = screenshot.content.getContext("2d");
                 context.globalCompositeOperation = 'source-over';
                 context.drawImage(img, 0, 0, img.width, img.height, 0, 0, img.width, img.height);
                 next_process();
@@ -149,21 +111,12 @@ var screenshot = {
           });
         }
       };
+      img.src = img_src;
     });
   }
 };
 
-//
-// download image
-//
-function downloadImage(image_data) {
-  chrome.downloads.download({
-    'url': URL.createObjectURL(dataURItoBlob(image_data)),
-    'filename': 'myfleet.png',
-  });
-}
-
-browser.runtime.onMessage.addListener((message) => {
+chrome.runtime.onMessage.addListener((message) => {
   //console.log("notify: " + message.type);
   if (message.type === "capture") {
     sendMessageTab({ type: "canvas", mode: "add" });
@@ -173,7 +126,12 @@ browser.runtime.onMessage.addListener((message) => {
   }
   if (message.type === "image_data") {
     if (message.mode === "add") {
-      saveLocal(message.data);
+      if (screenshot.capture_count >= 6) {
+        createImage();
+      }
+      else {
+        addImageOne(message.data);
+      }
     }
     else {
       downloadImage(message.data);
@@ -214,39 +172,84 @@ browser.runtime.onMessage.addListener((message) => {
   }
 });
 
-function saveLocal(image_data) {
-  let num = parseInt(sessionStorage.getItem("num"));
-  if (!num) {
-    num = 0;
-    config.load(); // config値を使うのは画像出力時なのでstorageの読込待たなくて良い
-  }
-
-  if (num >= 6) {
-    createImage();
-    return;
-  }
-
-  num++;
-
-  const key = "ss" + num;
-
-  console.log("save local: " + key);
-  chrome.storage.local.set({ [key]: image_data }, () => {
-    notifyCapture(num);
+function sendMessageTab(param) {
+  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+    chrome.tabs.sendMessage(tabs[0].id, param);
   });
-  
-  sessionStorage.setItem("num", num);
+};
+
+function addImageOne(img_src) {
+  const canvas = document.createElement("canvas");
+  canvas.width = config.width;
+  canvas.height = config.height;
+
+  const image = new Image();
+  image.src = img_src;
+  image.onload = function () {
+    const context = canvas.getContext("2d");
+    //context.mozImageSmoothingEnabled = false; 非推奨
+    context.webkitImageSmoothingEnabled = false;
+    context.msImageSmoothingEnabled = false;
+    context.imageSmoothingEnabled = false;
+
+    drawImage(() => {
+      const img_data = canvas.toDataURL();
+      saveLocalOne(img_data);
+    });
+
+    function drawImage(next_process) {
+      drawMask(() => {
+        context.drawImage(image, config.x, config.y, config.width, config.height, 0, 0, config.width, config.height);
+        next_process();
+      });
+    }
+
+    /**
+     * マスク画像処理
+     */
+    function drawMask(next_process) {
+      const img = new Image();
+      const key = "mask_file_" + config.view_type;
+      chrome.storage.local.get(key, (res) => {
+        if (res[key]) {
+          img.onload = () => {
+            context.globalCompositeOperation = 'xor';
+            context.drawImage(img, 0, 0, img.width, img.height, 0, 0, img.width, img.height);
+            next_process();
+          };
+          img.onerror = () => {
+            console.log("mask image load failure");
+            next_process();
+          };
+          img.src = res[key];
+        }
+        else {
+          next_process();
+        }
+      });
+    }
+  };
+}
+
+function saveLocalOne(image_data) {
+  screenshot.capture_count++;
+
+  const key = "ss" + screenshot.capture_count;
+  console.log("save local: " + key);
+
+  chrome.storage.local.set({ [key]: image_data }, () => {
+    notifyCapture(screenshot.capture_count, image_data);
+  });
 }
 
 function createImage() {
-  const num = parseInt(sessionStorage.getItem("num"));
-  if (!num) {
-    console.log("none capture image");
+  if (screenshot.capture_count === 0) {
+    console.log("no capture image");
     return;
   }
 
-  screenshot.image_max_count = num;
-  screenshot.init(num);
+  screenshot.image_max_count = screenshot.capture_count;
+  screenshot.init();
 
   chrome.storage.local.get(config.ss_key, (item) => {
     let funcs = [];
@@ -261,12 +264,6 @@ function createImage() {
     });
   });
 }
-
-var sendMessageTab = function (param) {
-  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-    chrome.tabs.sendMessage(tabs[0].id, param);
-  });
-};
 
 function dataURItoBlob(dataURI) {
   let byteString = atob(dataURI.split(',')[1]);
@@ -284,17 +281,28 @@ function dataURItoBlob(dataURI) {
 }
 
 /**
+ * Download image
+ */
+function downloadImage(image_data) {
+  chrome.downloads.download({
+    'url': URL.createObjectURL(dataURItoBlob(image_data)),
+    'filename': 'myfleet.png',
+  });
+}
+
+/**
  * キャプチャ時の通知
  */
-function notifyCapture(num) {
+function notifyCapture(num, img_url) {
   const nid = "kfc_" + num;
-  browser.notifications.create(nid, {
+  chrome.notifications.create(nid, {
     "type": "basic",
     "title": "Kancolle fleet capture",
     "message": num + " / 6",
+    "iconUrl": img_url
   });
   setTimeout(() => {
-    browser.notifications.clear(nid);
+    chrome.notifications.clear(nid);
   }, 1000);
 }
 
@@ -304,29 +312,31 @@ function notifyCapture(num) {
 function notifyChangeMode(num) {
   const nid = "mode_" + num;
   const mode_title = ["編成【詳細】", "編成【変更】", "編成展開【右列】", "基地航空隊"];
-  browser.notifications.create(nid, {
+  const img_url = "./mask_image/modeselect_" + num + ".png";
+  chrome.notifications.create(nid, {
     "type": "basic",
     "title": "Kancolle fleet capture",
     "message": mode_title[num - 1],
+    "iconUrl": img_url
   });
   setTimeout(() => {
-    browser.notifications.clear(nid);
+    chrome.notifications.clear(nid);
   }, 2000);
 }
 
 /**
  * アペンド画像設定時の通知
  */
-function notifySpecifyFleetNumber(num, additional_img) {
+function notifySpecifyFleetNumber(num, img_url) {
   const nid = "add_" + num;
-  browser.notifications.create(nid, {
+  chrome.notifications.create(nid, {
     "type": "basic",
     "title": "Kancolle fleet capture",
     "message": "",
-    "iconUrl": additional_img
+    "iconUrl": img_url
   });
   setTimeout(() => {
-    browser.notifications.clear(nid);
+    chrome.notifications.clear(nid);
   }, 1000);
 }
 
@@ -335,13 +345,15 @@ function notifySpecifyFleetNumber(num, additional_img) {
  */
 function notifyQuick() {
   const nid = "quick";
-  browser.notifications.create(nid, {
+  const img_url = "./mask_image/6xcap.png";
+  chrome.notifications.create(nid, {
     "type": "basic",
     "title": "Kancolle fleet capture",
     "message": "【編成詳細】連続キャプチャ開始",
+    "iconUrl": img_url
   });
   setTimeout(() => {
-    browser.notifications.clear(nid);
+    chrome.notifications.clear(nid);
   }, 1000);
 }
 
@@ -352,7 +364,7 @@ function notifyQuick() {
 function clearCache() {
   console.log("clear cache");
   chrome.storage.local.remove(config.ss_key, () => { });
-  sessionStorage.clear();
+  screenshot.capture_count = 0;
 }
 
 /**
@@ -385,5 +397,6 @@ function modeselect(num) {
         console.log("All parameter initialized");
       });
     }
+    config.load();
   });
 })();

@@ -21,7 +21,7 @@
     if (event.button === 0 && is_quickcapture) {
       if (invalid_click_count === 0 && checkButtonPoint(event.offsetX, event.offsetY)) {
         setTimeout(() => {
-          browser.runtime.sendMessage({ type: "capture" });
+          chrome.runtime.sendMessage({ type: "capture" });
           capture_count++;
           invalid_click_count = 1;
           if (capture_count >= max_quick_capture) {
@@ -40,7 +40,7 @@
 
   window.addEventListener('blur', (event) => {
     if (capture_count > 0) {
-      //browser.runtime.sendMessage({ type: "output" });
+      //chrome.runtime.sendMessage({ type: "output" });
       is_quickcapture = false;
     }
   });
