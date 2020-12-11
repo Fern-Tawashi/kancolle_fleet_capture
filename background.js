@@ -7,7 +7,10 @@ var config = {
   vertical_num: 2,   // 編成縦アイテム数
   view_type: 1,
   ss_key: ['ss1', 'ss2', 'ss3', 'ss4', 'ss5', 'ss6'],
- 
+
+  /**
+   * config値の参照は画像出力時なので基本的に読み込み待ちしなくて良い
+   */
   load : function() {
     chrome.storage.local.get(['layout', 'mask', 'current_view_type'], (res) => {
       if (res.layout != null) {
@@ -198,8 +201,16 @@ browser.runtime.onMessage.addListener((message) => {
       }
     });
   }
-  if (message.type === "destroy") {
+  if (message.type === "clear") {
     clearCache();
+  }
+  if (message.type === "quickx6") {
+    chrome.storage.local.set({ "current_view_type": 1 }, () => {
+      clearCache();
+      config.load();
+      notifyQuick();
+      sendMessageTab({ type: "quickx6" });
+    });
   }
 });
 
@@ -207,7 +218,7 @@ function saveLocal(image_data) {
   let num = parseInt(sessionStorage.getItem("num"));
   if (!num) {
     num = 0;
-    config.load();
+    config.load(); // config値を使うのは画像出力時なのでstorageの読込待たなくて良い
   }
 
   if (num >= 6) {
@@ -252,10 +263,8 @@ function createImage() {
 }
 
 var sendMessageTab = function (param) {
-  chrome.tabs.query({ active: true, windowId: chrome.windows.WINDOW_ID_CURRENT }, function (tab) {
-    for (let i = 0; i < tab.length; i++) {
-      chrome.tabs.sendMessage(tab[i].id, param, function () { });
-    };
+  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+    chrome.tabs.sendMessage(tabs[0].id, param);
   });
 };
 
@@ -306,7 +315,7 @@ function notifyChangeMode(num) {
 }
 
 /**
- * 連合艦隊番号設定時の通知
+ * アペンド画像設定時の通知
  */
 function notifySpecifyFleetNumber(num, additional_img) {
   const nid = "add_" + num;
@@ -315,6 +324,21 @@ function notifySpecifyFleetNumber(num, additional_img) {
     "title": "Kancolle fleet capture",
     "message": "",
     "iconUrl": additional_img
+  });
+  setTimeout(() => {
+    browser.notifications.clear(nid);
+  }, 1000);
+}
+
+/**
+ * クイックキャプチャ操作時
+ */
+function notifyQuick() {
+  const nid = "quick";
+  browser.notifications.create(nid, {
+    "type": "basic",
+    "title": "Kancolle fleet capture",
+    "message": "【編成詳細】連続キャプチャ開始",
   });
   setTimeout(() => {
     browser.notifications.clear(nid);
@@ -355,7 +379,7 @@ function modeselect(num) {
  */
 (function () {
   chrome.storage.local.get("current_view_type", (res) => {
-    console.log(res.current_view_type);
+    console.log("load background: " + res.current_view_type);
     if (res.current_view_type == null) {
       chrome.storage.local.set(initial_data, () => {
         console.log("All parameter initialized");

@@ -62,6 +62,12 @@ function loadAdditionalImage() {
   }
 }
 
+function loadOther() {
+  chrome.storage.local.get("quick_delay", (res) => {
+    document.querySelector("#delay").value = res.quick_delay;
+  });
+}
+
 /**
  * 工場出荷時に戻す 
  */
@@ -77,19 +83,21 @@ function loadDefault(next_process) {
 
 document.addEventListener('DOMContentLoaded', () => {
   chrome.storage.local.get("current_view_type", (res) => {
-    console.log("init current_view_type: " + res.current_view_type);
+    console.log("load current_view_type: " + res.current_view_type);
     let view_type = 1;
     if (res.current_view_type != null) {
       view_type = res.current_view_type;
       loadOption(view_type);
       loadMaskImage(view_type);
       loadAdditionalImage();
+      loadOther();
     }
     else {
       loadDefault(() => {
         loadOption(view_type);
         loadMaskImage(view_type);
         loadAdditionalImage();
+        loadOther();
       });
     }
     document.querySelector("#view_list").value = view_type;
@@ -217,6 +225,22 @@ document.querySelector('button[name="setdef"]').addEventListener('click', (e) =>
       loadOption(current_view_type);
       loadMaskImage(current_view_type);
       loadAdditionalImage();
+      loadOther();
     });
+  }
+});
+
+/**
+ * クイックキャプチャの遅延保存
+ */
+document.querySelector('button[name="delay"]').addEventListener('click', (e) => {
+  const quick_delay = parseInt(document.querySelector("#delay").value);
+  if (quick_delay > 0 && quick_delay < 1000) {
+    chrome.storage.local.set({ "quick_delay": quick_delay }, () => {
+      console.log("delay_time stored: " + quick_delay);
+    });
+  }
+  else {
+    window.alert("1～1000の値を設定してください");
   }
 });
