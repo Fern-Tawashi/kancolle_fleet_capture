@@ -40,6 +40,19 @@ function loadAdditionalImage() {
   });
 }
 
+function loadNumberImage() {
+  const key = "number_file";
+  chrome.storage.local.get(key, (res) => {
+    const img = document.querySelector("#num_src");
+    if (res[key] != null) {
+      img.src = res[key];
+    }
+    else {
+      img.src = "./mask_image/num_null.png";
+    }
+  });
+}
+
 function loadOther() {
   chrome.storage.local.get(["layout"], (res) => {
     if (res["layout"] == null) {
@@ -75,6 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
       loadCoord(view_type);
       loadMaskImage(view_type);
       loadAdditionalImage();
+      loadNumberImage();
       loadOther();
     }
     else {
@@ -82,6 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadCoord(view_type);
         loadMaskImage(view_type);
         loadAdditionalImage();
+        loadNumberImage();
         loadOther();
       });
     }
@@ -152,7 +167,7 @@ document.querySelector('#input_mask').addEventListener('change', (e) => {
       aImg.src = e.target.result;
       const mask_file_key = "mask_file_" + current_view_type;
       chrome.storage.local.set({ [mask_file_key]: e.target.result }, () => {
-        console.log("mask file stored: " + mask_file_key);
+        console.log("file stored: " + mask_file_key);
       });
     };
   })(img);
@@ -165,8 +180,8 @@ document.querySelector('#input_mask').addEventListener('change', (e) => {
 document.querySelector('#delmask').addEventListener('click', (e) => {
   const current_view_type = document.querySelector("#view_list").value;
   const key = "mask_file_" + current_view_type;
-  console.log("delete: " + key);
   chrome.storage.local.remove(key, () => {
+    console.log("delete: " + key);
     const img = document.querySelector("#mask_src");
     img.src = "./mask_image/mask_null.png";
   });
@@ -192,7 +207,7 @@ document.querySelectorAll('input[name="input_tag"]').forEach(btn => {
         aImg.src = e.target.result;
         const key = "additional_file_" + additional_no;
         chrome.storage.local.set({ [key]: e.target.result }, () => {
-          console.log("additional file stored: " + key);
+          console.log("file stored: " + key);
         });
       };
     })(img);
@@ -208,10 +223,47 @@ document.querySelectorAll('button[name="deltag"]').forEach(btn => {
     const no = e.currentTarget.dataset.no;
     const img = document.querySelector("#tagsrc_" + no);
     const key = "additional_file_" + no;
-    console.log("delete: " + key);
     chrome.storage.local.remove(key, () => {
+      console.log("delete: " + key);
       img.src = "./mask_image/mask_null.png";
     });
+  });
+});
+
+/**
+ * ナンバリング画像設定
+ */
+document.querySelector('#input_num').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file.size > (1024 * 1024 * 1)) {
+    document.querySelector('#num_src').src = "./mask_image/num_err.png";
+    return;
+  }
+
+  const img = document.querySelector("#num_src");
+
+  const reader = new FileReader();
+  reader.onload = (function (aImg) {
+    return function (e) {
+      aImg.src = e.target.result;
+      const key = "number_file";
+      chrome.storage.local.set({ [key]: e.target.result }, () => {
+        console.log("file stored: " + key);
+      });
+    };
+  })(img);
+  reader.readAsDataURL(file);
+});
+
+/**
+ * ナンバリング画像削除
+ */
+document.querySelector('#delnum').addEventListener('click', (e) => {
+  const key = "number_file";
+  chrome.storage.local.remove(key, () => {
+    console.log("delete: " + key);
+    const img = document.querySelector("#num_src");
+    img.src = "./mask_image/num_null.png";
   });
 });
 
@@ -245,6 +297,7 @@ document.querySelector('#setdef_confirm').addEventListener('click', (e) => {
       loadCoord(view_type);
       loadMaskImage(view_type);
       loadAdditionalImage();
+      loadNumberImage();
       loadOther();
     });
   }

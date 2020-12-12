@@ -9,7 +9,10 @@ function key_input_event(code) {
   if (code === 'KeyA') { // 'a'
     chrome.runtime.sendMessage({ type: "fullscreen" });
   }
-  if (code === 'KeyQ') { // 'q'
+  if (code === 'KeyW') { // 'W'
+    chrome.runtime.sendMessage({ type: "number" });
+  }
+if (code === 'KeyQ') { // 'q'
     chrome.runtime.sendMessage({ type: "quickx6" });
   }
   if (code === 'BracketRight') { // '['

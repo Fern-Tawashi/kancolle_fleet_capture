@@ -133,6 +133,23 @@
 
     <hr />
 
+    <div>
+        <p>
+            ナンバリング画像（1MBまで）
+        </p>
+
+        <div>
+            <img align="top" src="./mask_image/mask_null.png" id="num_src" />
+            <button type="button" id="delnum"><span style="font-weight:bold;">x</span></button>
+        </div>
+
+        <div style="color:blue;">
+            <input type="file" accept="image/png" id="input_num">
+        </div>
+    </div>
+
+    <hr />
+
     <form name="delaytime">
         <div>
             <p>
@@ -147,7 +164,8 @@
 
     <div>
         <button type="button" id="setdef">初期設定に戻す</button>
-        <span id="setdef_confirm" style="visibility:hidden;">→
+        <span id="setdef_confirm" style="visibility:hidden;">
+            →
             <button type="button" class="button_yesno" value="1">はい</button>
             <button type="button" class="button_yesno" value="0">いいえ</button>
         </span>

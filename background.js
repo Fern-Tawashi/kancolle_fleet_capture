@@ -44,42 +44,55 @@ var screenshot = {
   content: document.createElement("canvas"),
   capture_count: 0,
   image_max_count: 0,
-  image_load_count: 0,
+  image_add_count: 0,
   addition_image: 0,
+  order_number: false,
   init: function () {
     const num = screenshot.image_max_count;
     const col = (num > config.horizontal_num) ? config.horizontal_num : num;
-    const row = parseInt((num - 1) / config.horizontal_num) + 1;
+    const row = Math.floor((num - 1) / config.horizontal_num) + 1;
     screenshot.content.width = config.width * col;
     screenshot.content.height = config.height * row;
-    screenshot.image_load_count = 0;
+    screenshot.image_add_count = 0;
+    console.log("canvas: " + screenshot.content.width + "x" + screenshot.content.height + ", " + col + "x" + row);
   },
-  addImage: function (img_src) {
+  addImage: function (img_src, order) {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = function() {
-        const col = screenshot.image_load_count % config.horizontal_num;
-        const row = parseInt(screenshot.image_load_count / config.horizontal_num);
-        const dx = config.width * col;
-        const dy = config.height * row;
-
         const context = screenshot.content.getContext("2d");
         //context.mozImageSmoothingEnabled = false; 非推奨
         context.webkitImageSmoothingEnabled = false;
         context.msImageSmoothingEnabled = false;
         context.imageSmoothingEnabled = false;
 
-        context.drawImage(img, dx, dy);
-        screenshot.image_load_count++;
-        console.log("image_load_count: " + screenshot.image_load_count + " / " + screenshot.image_max_count);
+        setImage(() => {
+          screenshot.image_add_count++;
+          console.log("add|order: " + screenshot.image_add_count + " === " + (order + 1));
 
-        //最大枚数に達したら強制DL
-        if (screenshot.image_load_count >= screenshot.image_max_count) {
-          drawAddition(screenshot.addition_image, () => {
-            downloadImage(screenshot.content.toDataURL());
+          //最大枚数に達したら強制DL
+          if (screenshot.image_add_count >= screenshot.image_max_count) {
+            drawAddition(screenshot.addition_image, () => {
+              downloadImage(screenshot.content.toDataURL());
+            });
+          }
+
+          resolve();
+        });
+
+        /**
+         * 画像配置
+         */
+        function setImage(next_process) {
+          const col = order % config.horizontal_num;
+          const row = Math.floor(order / config.horizontal_num);
+          const dx = config.width * col;
+          const dy = config.height * row;
+          context.drawImage(img, dx, dy);
+          drawNumber(order, dx + img.width, dy + img.height, () => {
+            next_process();
           });
         }
-        resolve();
 
         /**
          * 追加画像差し込み（第n艦隊）
@@ -110,6 +123,43 @@ var screenshot = {
             }
           });
         }
+
+        /**
+         * 編成番号差し込み
+         */
+        function drawNumber(order, right_bottom_x, right_bottom_y, next_process) {
+          if (!screenshot.order_number) {
+            next_process();
+            return;
+          }
+
+          const key = "number_file";
+          const MARGIN = 3;
+          chrome.storage.local.get(key, (res) => {
+            if (res[key]) {
+              const img = new Image();
+              img.onload = () => {
+                const w = Math.floor(img.width / 6);
+                const x = order * w;
+                const dx = right_bottom_x - w - MARGIN;
+                const dy = right_bottom_y - img.height - MARGIN;
+                context.globalCompositeOperation = 'source-over';
+                //console.log(x + ", " + w + ", " + w + ", " + img.height);
+                context.drawImage(img, x, 0, w, img.height, dx, dy, w, img.height);
+                next_process();
+              };
+              img.onerror = () => {
+                console.log("number image load failure");
+                next_process();
+              };
+              img.src = res[key];
+            }
+            else {
+              next_process();
+            }
+          });
+        }
+
       };
       img.src = img_src;
     });
@@ -144,10 +194,12 @@ chrome.runtime.onMessage.addListener((message) => {
     clearCache();
     config.load();
     screenshot.addition_image = 0;
+    screenshot.order_number = false;
   }
   if (message.type === "modeselect") {
     clearCache();
     screenshot.addition_image = 0;
+    screenshot.order_number = false;
     modeselect(message.num);
   }
   if (message.type === "addition") {
@@ -156,6 +208,15 @@ chrome.runtime.onMessage.addListener((message) => {
       if (res[key]) {
         notifySpecifyFleetNumber(message.num, res[key]);
         screenshot.addition_image = message.num;
+      }
+    });
+  }
+  if (message.type === "number") {
+    const key = "number_file";
+    chrome.storage.local.get(key, (res) => {
+      if (res[key]) {
+        screenshot.order_number = true;
+        notifyNumbering(res[key]);
       }
     });
   }
@@ -183,9 +244,9 @@ function addImageOne(img_src) {
   canvas.width = config.width;
   canvas.height = config.height;
 
-  const image = new Image();
-  image.src = img_src;
-  image.onload = function () {
+  const img = new Image();
+  img.src = img_src;
+  img.onload = function () {
     const context = canvas.getContext("2d");
     //context.mozImageSmoothingEnabled = false; 非推奨
     context.webkitImageSmoothingEnabled = false;
@@ -199,7 +260,7 @@ function addImageOne(img_src) {
 
     function drawImage(next_process) {
       drawMask(() => {
-        context.drawImage(image, config.x, config.y, config.width, config.height, 0, 0, config.width, config.height);
+        context.drawImage(img, config.x, config.y, config.width, config.height, 0, 0, config.width, config.height);
         next_process();
       });
     }
@@ -253,14 +314,16 @@ function createImage() {
 
   chrome.storage.local.get(config.ss_key, (item) => {
     let funcs = [];
+    let order = 0;
     for (let i in item) {
-      funcs.push(screenshot.addImage(item[i]));
+      funcs.push(screenshot.addImage(item[i], order++));
     }
 
     Promise.all(funcs).then(() => {
       clearCache();
 
       screenshot.addition_image = 0;
+      screenshot.order_number = false;
     });
   });
 }
@@ -299,6 +362,22 @@ function notifyCapture(num, img_url) {
     "type": "basic",
     "title": "Kancolle fleet capture",
     "message": num + " / 6",
+    "iconUrl": img_url
+  });
+  setTimeout(() => {
+    chrome.notifications.clear(nid);
+  }, 1000);
+}
+
+/**
+ * 編成番号付加時の通知
+ */
+function notifyNumbering(img_url) {
+  const nid = "number";
+  chrome.notifications.create(nid, {
+    "type": "basic",
+    "title": "Kancolle fleet capture",
+    "message": "番号付き",
     "iconUrl": img_url
   });
   setTimeout(() => {
