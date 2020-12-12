@@ -124,7 +124,8 @@ document.querySelector("form[name='coordinate']").addEventListener("submit", (e)
   }
   else {
     chrome.storage.local.set({ [data_key]: view_data }, () => {
-      console.log("config saved: " + view_data);
+      console.log("save coordinate: " + view_data.x + "x" + view_data.y + ", " + view_data.w + "x" + view_data.h);
+      chrome.runtime.sendMessage({ type: "reset" });
     });
   }
 });
@@ -293,12 +294,15 @@ document.querySelector('#setdef').addEventListener('click', (e) => {
 document.querySelector('#setdef_confirm').addEventListener('click', (e) => {
   if (e.target.type === 'button' && e.target.value == 1) {
     loadDefault(() => {
-      const view_type = document.querySelector("#view_list").value;
+      const view_type = 1
+      document.querySelector("#view_list").value = view_type;
       loadCoord(view_type);
       loadMaskImage(view_type);
       loadAdditionalImage();
       loadNumberImage();
       loadOther();
+
+      chrome.runtime.sendMessage({ type: "reset" });
     });
   }
   const confirm = document.querySelector('#setdef_confirm');

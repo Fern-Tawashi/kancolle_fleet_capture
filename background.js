@@ -294,11 +294,9 @@ function addImageOne(img_src) {
 
 function saveLocalOne(image_data) {
   screenshot.capture_count++;
-
   const key = "ss" + screenshot.capture_count;
-  console.log("save local: " + key);
-
   chrome.storage.local.set({ [key]: image_data }, () => {
+    console.log("save local: " + key);
     notifyCapture(screenshot.capture_count, image_data);
   });
 }
@@ -457,9 +455,9 @@ function modeselect(num) {
   if (new_view_type < 1) {
     new_view_type = 4;
   }
-  console.log("change current_view_type: " + new_view_type);
 
   chrome.storage.local.set({ "current_view_type": new_view_type }, () => {
+    console.log("save view_type: " + new_view_type);
     notifyChangeMode(new_view_type);
     config.load();
   });
