@@ -180,7 +180,7 @@ chrome.runtime.onMessage.addListener((message) => {
         createImage();
       }
       else {
-        addImageOne(message.data);
+        addImageOne(message.data, message.text);
       }
     }
     else {
@@ -239,7 +239,7 @@ function sendMessageTab(param) {
   });
 };
 
-function addImageOne(img_src) {
+function addImageOne(img_src, edit_text) {
   const canvas = document.createElement("canvas");
   canvas.width = config.width;
   canvas.height = config.height;
@@ -261,6 +261,15 @@ function addImageOne(img_src) {
     function drawImage(next_process) {
       drawMask(() => {
         context.drawImage(img, config.x, config.y, config.width, config.height, 0, 0, config.width, config.height);
+
+        // 基地航空隊名テキストの補填
+        if (config.view_type == 4) {
+          context.globalCompositeOperation = 'source-over';
+          context.fillStyle = 'black';
+          context.font = "16pt sans-serif";
+          context.fillText(edit_text, 17, 107);
+        }
+
         next_process();
       });
     }
