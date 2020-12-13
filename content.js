@@ -18,5 +18,5 @@ window.addEventListener("keyup", (event) => {
 window.addEventListener('beforeunload', (event) => {
   event.preventDefault();
   event.returnValue = '';
-  browser.runtime.sendMessage({ type: "clear" });
+  chrome.runtime.sendMessage({ type: "clear" });
 });

@@ -21,7 +21,7 @@
     if (event.button === 0 && is_quickcapture) {
       if (invalid_click_count === 0 && checkButtonPoint(event.offsetX, event.offsetY)) {
         setTimeout(() => {
-          browser.runtime.sendMessage({ type: "capture" });
+          chrome.runtime.sendMessage({ type: "capture" });
           capture_count++;
           invalid_click_count = 1;
           if (capture_count >= max_quick_capture) {
@@ -40,7 +40,7 @@
 
   window.addEventListener('blur', (event) => {
     if (capture_count > 0) {
-      //browser.runtime.sendMessage({ type: "output" });
+      //chrome.runtime.sendMessage({ type: "output" });
       is_quickcapture = false;
     }
   });
@@ -52,7 +52,11 @@
         const canvas = document.querySelectorAll('canvas');
         const image_data = canvas[0].toDataURL('image/png');
 
-        chrome.runtime.sendMessage({ type: "image_data", data: image_data, mode: request.mode });
+        const edit = document.querySelector('#r_editbox');
+        const edit_text = edit ? edit.value : "";
+        console.log("r_editbox:" + edit.value);
+
+        chrome.runtime.sendMessage({ type: "image_data", data: image_data, mode: request.mode, text: edit_text });
       });
     }
     if (request.type === 'quickx6') {

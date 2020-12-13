@@ -2,69 +2,88 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <style>
+        hr {
+            width: 100%;
+            border-width: 1px 0px 0px 0px;
+            border-color: cornflowerblue;
+        }
+        .button_yesno {
+            border-width: 1px;
+            border-color: darkred;
+            background-color: red;
+            color: black;
+        }
+    </style>
 </head>
 <body>
-    <form>
-        <p>
-            キャプチャ対象：
-            <select id="view_list">
-                <option value="1">編成【詳細】</option>
-                <option value="2">編成【変更】</option>
-                <option value="3">編成展開【右列】</option>
-                <option value="4">基地航空隊</option>
-                <option value="5">ユーザ定義1</option>
-                <option value="6">ユーザ定義2</option>
-                <option value="7">ユーザ定義3</option>
-                <option value="8">ユーザ定義4</option>
-            </select>
-        </p>
+    <div style="margin-top: 8px;">
+        キャプチャ対象：
+        <select id="view_list">
+            <option value="1">編成【詳細】</option>
+            <option value="2">編成【変更】</option>
+            <option value="3">編成展開【右列】</option>
+            <option value="4">基地航空隊</option>
+            <option value="5">ユーザ定義1</option>
+            <option value="6">ユーザ定義2</option>
+            <option value="7">ユーザ定義3</option>
+            <option value="8">ユーザ定義4</option>
+        </select>
+    </div>
 
+    <form name="coordinate">
         <div>
             <p>
                 <label>x </label>
-                <input type="number" id="x" value="475">
+                <input type="number" min="0" max="1200" id="x" value="475"><span> (0～1200)</span>
             </p>
             <p>
                 <label>y </label>
-                <input type="number" id="y" value="145">
+                <input type="number" min="0" max="720" id="y" value="145"><span> (0～720)</span>
             </p>
             <p>
                 <label>w </label>
-                <input type="number" id="width" value="720">
+                <input type="number" min="1" max="1200" id="width" value="720"><span> (1～1200)</span>
             </p>
             <p>
                 <label>h </label>
-                <input type="number" id="height" value="560">
+                <input type="number" min="1" max="720" id="height" value="560"><span> (1～720)</span>
             </p>
 
             <button type="submit">座標登録</button>
         </div>
+    </form>
 
+    <hr />
+
+    <div>
+        <label>六隻配置: </label>
+        <input type="radio" name="layout" id="layout_0" value="0" /><label for="layout_0">3x2</label>
+        <input type="radio" name="layout" id="layout_1" value="1" /><label for="layout_1">2x3</label>
+    </div>
+
+    <hr />
+
+    <div>
         <p>
-            <label>六隻配置: </label>
-            <input type="radio" name="layout" id="layout_0" value="0" /><label for="layout_0">3x2</label>
-            <input type="radio" name="layout" id="layout_1" value="1" /><label for="layout_1">2x3</label>
+            マスク画像（※非透過部分がマスクされます）（1MBまで）
         </p>
 
         <div>
-            <p>
-                マスク画像(※非透過部分がマスクされます)
-            </p>
-
-            <div>
-                <img align="top" src="./mask_image/mask_null.png" id="mask_src" style="height:160px;" />
-                <button type="button" id="delmask"><span style="font-weight:bold;">x</span></button>
-            </div>
-
-            <div style="color:blue">
-                <input type="file" accept="image/png" id="input_mask">
-            </div>
+            <img align="top" src="./mask_image/mask_null.png" id="mask_src" style="height:160px;" />
+            <button type="button" id="delmask"><span style="font-weight:bold;">x</span></button>
         </div>
 
-        <hr />
+        <div style="color:blue;">
+            <input type="file" accept="image/png" id="input_mask">
+        </div>
+    </div>
 
+    <hr />
+
+    <div>
         <div style="display: inline-block;">
-            <p>[1]キーで追加される画像</p>
+            <p>[1]キーで追加される画像（3MBまで）</p>
             <div>
                 <img align="top" src="./mask_image/mask_null.png" id="tagsrc_1" style="height:160px;" />
                 <button type="button" name="deltag" data-no="1"><span style="font-weight:bold;">x</span></button>
@@ -76,7 +95,7 @@
         </div>
 
         <div style="display: inline-block;">
-            <p>[2]キーで追加される画像</p>
+            <p>[2]キーで追加される画像（3MBまで）</p>
             <div>
                 <img align="top" src="./mask_image/mask_null.png" id="tagsrc_2" style="height:160px;" />
                 <button type="button" name="deltag" data-no="2"><span style="font-weight:bold;">x</span></button>
@@ -88,7 +107,7 @@
         </div>
 
         <div style="display: inline-block;">
-            <p>[3]キーで追加される画像</p>
+            <p>[3]キーで追加される画像（3MBまで）</p>
             <div>
                 <img align="top" src="./mask_image/mask_null.png" id="tagsrc_3" style="height:160px;" />
                 <button type="button" name="deltag" data-no="3"><span style="font-weight:bold;">x</span></button>
@@ -100,7 +119,7 @@
         </div>
 
         <div style="display: inline-block;">
-            <p>[4]キーで追加される画像</p>
+            <p>[4]キーで追加される画像（3MBまで）</p>
             <div>
                 <img align="top" src="./mask_image/mask_null.png" id="tagsrc_4" style="height:160px;" />
                 <button type="button" name="deltag" data-no="4"><span style="font-weight:bold;">x</span></button>
@@ -110,24 +129,48 @@
                 <input type="file" accept="image/png" name="input_tag" data-no="4">
             </div>
         </div>
+    </div>
 
-        <hr />
+    <hr />
 
+    <div>
+        <p>
+            ナンバリング画像（1MBまで）
+        </p>
+
+        <div>
+            <img align="top" src="./mask_image/mask_null.png" id="num_src" />
+            <button type="button" id="delnum"><span style="font-weight:bold;">x</span></button>
+        </div>
+
+        <div style="color:blue;">
+            <input type="file" accept="image/png" id="input_num">
+        </div>
+    </div>
+
+    <hr />
+
+    <form name="delaytime">
         <div>
             <p>
-                <label>クイックキャプチャ時のディレイ（ミリ秒） </label>
-                <input type="number" id="delay" value="200">
-                <button type="button" name="delay">保存</button>
+                <label>６連キャプチャ時のディレイ</label>
+                <input type="number" min="1" max="1000" id="delay" value="200"><span> （1～1000ms）</span>
+                <button type="submit">保存</button>
             </p>
         </div>
-
-        <hr />
-
-        <div>
-            <button type="button" name="setdef">初期設定に戻す</button>
-        </div>
-
     </form>
+
+    <hr />
+
+    <div>
+        <button type="button" id="setdef">初期設定に戻す</button>
+        <span id="setdef_confirm" style="visibility:hidden;">
+            →
+            <button type="button" class="button_yesno" value="1">はい</button>
+            <button type="button" class="button_yesno" value="0">いいえ</button>
+        </span>
+    </div>
+
     <script src="config.js"></script>
     <script src="options.js"></script>
 </body>
