@@ -56,9 +56,44 @@ var screenshot = {
     screenshot.image_add_count = 0;
     console.log("canvas: " + screenshot.content.width + "x" + screenshot.content.height + ", " + col + "x" + row);
   },
+  getThumbnail: function (img_src, width, height, num, result) {
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext("2d");
+    ctx.webkitImageSmoothingEnabled = false;
+    ctx.msImageSmoothingEnabled = false;
+    ctx.imageSmoothingEnabled = false;
+
+    const img = new Image();
+    img.src = img_src;
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, width, height);
+      addProgress(num, () => {
+        result(canvas.toDataURL());
+      });
+    }
+
+    function addProgress(num, next_process) {
+      if (num == null) {
+        next_process();
+        return;
+      }
+
+      ctx.globalCompositeOperation = 'source-over';
+      const img = new Image();
+      img.src = `./mask_image/progress_${num}.png`;
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, width, height);
+        next_process();
+      }
+    }
+  },
   addImage: function (img_src, order) {
     return new Promise((resolve) => {
       const img = new Image();
+      img.src = img_src;
       img.onload = function() {
         const context = screenshot.content.getContext("2d");
         //context.mozImageSmoothingEnabled = false; 非推奨
@@ -95,7 +130,7 @@ var screenshot = {
         }
 
         /**
-         * 追加画像差し込み（第n艦隊）
+         * 追加画像差し込み
          */
         function drawAddition(no, next_process) {
           if (no == 0) {
@@ -107,6 +142,7 @@ var screenshot = {
           chrome.storage.local.get(key, (res) => {
             if (res[key]) {
               const img = new Image();
+              img.src = res[key];
               img.onload = () => {
                 context.globalCompositeOperation = 'source-over';
                 context.drawImage(img, 0, 0, img.width, img.height, 0, 0, img.width, img.height);
@@ -116,7 +152,6 @@ var screenshot = {
                 console.log("additional image load failure");
                 next_process();
               };
-              img.src = res[key];
             }
             else {
               next_process();
@@ -138,6 +173,7 @@ var screenshot = {
           chrome.storage.local.get(key, (res) => {
             if (res[key]) {
               const img = new Image();
+              img.src = res[key];
               img.onload = () => {
                 const w = Math.floor(img.width / 6);
                 const x = order * w;
@@ -152,7 +188,6 @@ var screenshot = {
                 console.log("number image load failure");
                 next_process();
               };
-              img.src = res[key];
             }
             else {
               next_process();
@@ -161,7 +196,6 @@ var screenshot = {
         }
 
       };
-      img.src = img_src;
     });
   }
 };
@@ -206,7 +240,7 @@ chrome.runtime.onMessage.addListener((message) => {
     const key = "additional_file_" + message.num;
     chrome.storage.local.get(key, (res) => {
       if (res[key]) {
-        notifySpecifyFleetNumber(message.num, res[key]);
+        notifyPopup({ image: res[key] });
         screenshot.addition_image = message.num;
       }
     });
@@ -216,7 +250,7 @@ chrome.runtime.onMessage.addListener((message) => {
     chrome.storage.local.get(key, (res) => {
       if (res[key]) {
         screenshot.order_number = true;
-        notifyNumbering(res[key]);
+        notifyPopup({ image: "./mask_image/nums_icon.png" });
       }
     });
   }
@@ -227,7 +261,7 @@ chrome.runtime.onMessage.addListener((message) => {
     chrome.storage.local.set({ "current_view_type": 1 }, () => {
       clearCache();
       config.load();
-      notifyQuick();
+      notifyPopup({ image: "./mask_image/6xcap.png" });
       sendMessageTab({ type: "quickx6" });
     });
   }
@@ -267,7 +301,7 @@ function addImageOne(img_src, edit_text) {
           context.globalCompositeOperation = 'source-over';
           context.fillStyle = 'black';
           context.font = "16pt sans-serif";
-          context.fillText(edit_text, 17, 107);
+          context.fillText(edit_text, 18, 107);
         }
 
         next_process();
@@ -278,10 +312,11 @@ function addImageOne(img_src, edit_text) {
      * マスク画像処理
      */
     function drawMask(next_process) {
-      const img = new Image();
       const key = "mask_file_" + config.view_type;
       chrome.storage.local.get(key, (res) => {
         if (res[key]) {
+          const img = new Image();
+          img.src = res[key];
           img.onload = () => {
             context.globalCompositeOperation = 'xor';
             context.drawImage(img, 0, 0, img.width, img.height, 0, 0, img.width, img.height);
@@ -291,7 +326,6 @@ function addImageOne(img_src, edit_text) {
             console.log("mask image load failure");
             next_process();
           };
-          img.src = res[key];
         }
         else {
           next_process();
@@ -306,7 +340,7 @@ function saveLocalOne(image_data) {
   const key = "ss" + screenshot.capture_count;
   chrome.storage.local.set({ [key]: image_data }, () => {
     console.log("save local: " + key);
-    notifyCapture(screenshot.capture_count, image_data);
+    notifyPopup( { image: image_data, num: screenshot.capture_count } );
   });
 }
 
@@ -361,89 +395,6 @@ function downloadImage(image_data) {
 }
 
 /**
- * キャプチャ時の通知
- */
-function notifyCapture(num, img_url) {
-  const nid = "kfc_" + num;
-  chrome.notifications.create(nid, {
-    "type": "basic",
-    "title": "Kancolle fleet capture",
-    "message": num + " / 6",
-    "iconUrl": img_url
-  });
-  setTimeout(() => {
-    chrome.notifications.clear(nid);
-  }, 1000);
-}
-
-/**
- * 編成番号付加時の通知
- */
-function notifyNumbering(img_url) {
-  const nid = "number";
-  chrome.notifications.create(nid, {
-    "type": "basic",
-    "title": "Kancolle fleet capture",
-    "message": "番号付き",
-    "iconUrl": img_url
-  });
-  setTimeout(() => {
-    chrome.notifications.clear(nid);
-  }, 1000);
-}
-
-/**
- * モード切替時の通知
- */
-function notifyChangeMode(num) {
-  const nid = "mode_" + num;
-  const mode_title = ["編成【詳細】", "編成【変更】", "編成展開【右列】", "基地航空隊"];
-  const img_url = "./mask_image/modeselect_" + num + ".png";
-  chrome.notifications.create(nid, {
-    "type": "basic",
-    "title": "Kancolle fleet capture",
-    "message": mode_title[num - 1],
-    "iconUrl": img_url
-  });
-  setTimeout(() => {
-    chrome.notifications.clear(nid);
-  }, 2000);
-}
-
-/**
- * アペンド画像設定時の通知
- */
-function notifySpecifyFleetNumber(num, img_url) {
-  const nid = "add_" + num;
-  chrome.notifications.create(nid, {
-    "type": "basic",
-    "title": "Kancolle fleet capture",
-    "message": "",
-    "iconUrl": img_url
-  });
-  setTimeout(() => {
-    chrome.notifications.clear(nid);
-  }, 1000);
-}
-
-/**
- * クイックキャプチャ操作時
- */
-function notifyQuick() {
-  const nid = "quick";
-  const img_url = "./mask_image/6xcap.png";
-  chrome.notifications.create(nid, {
-    "type": "basic",
-    "title": "Kancolle fleet capture",
-    "message": "【編成詳細】連続キャプチャ開始",
-    "iconUrl": img_url
-  });
-  setTimeout(() => {
-    chrome.notifications.clear(nid);
-  }, 1000);
-}
-
-/**
  * ローカルストレージ削除
  * C:\Users\<user>\AppData\Roaming\Mozilla\Firefox\Profiles\.default\storage\default\moz-extension\idb\
  */
@@ -467,8 +418,19 @@ function modeselect(num) {
 
   chrome.storage.local.set({ "current_view_type": new_view_type }, () => {
     console.log("save view_type: " + new_view_type);
-    notifyChangeMode(new_view_type);
+    const img_url = `./mask_image/modeselect_${new_view_type}.png`;
+    notifyPopup({ image: img_url });
     config.load();
+  });
+}
+
+/**
+ * 通知
+ */
+function notifyPopup(option) {
+  screenshot.getThumbnail(option.image, 120, 120, option.num, (res) => {
+    option.image = res;
+    sendMessageTab({ type: "popup", data: option });
   });
 }
 
