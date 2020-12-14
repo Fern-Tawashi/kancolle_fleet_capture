@@ -3,10 +3,10 @@
     "manifest_version": 2,
     "name": "Kancolle fleet capture",
     "homepage_url": "https://twitter.com/mtm13th",
-    "version": "1.92",
+    "version": "1.93",
     "icons": {
-      "48": "icon_48.png",
-      "96": "icon_96.png"
+        "48": "icon/icon_48.png",
+        "96": "icon/icon_96.png"
     },
     "background": {
         "scripts": [ "config.js", "background.js" ]
@@ -40,6 +40,11 @@
     "options_ui": {
         "page": "options.html",
         "chrome_style": true
+    },
+
+    "page_action": {
+        "default_icon": "icon/icon_48.png",
+        "show_matches": [ "*://www.dmm.com/netgame/social/-/gadgets/=/app_id=854854/" ]
     },
 
     "permissions": [

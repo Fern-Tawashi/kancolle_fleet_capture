@@ -435,6 +435,13 @@ function notifyPopup(option) {
 }
 
 /**
+ * page_action
+ */
+chrome.pageAction.onClicked.addListener(() => {
+  chrome.runtime.openOptionsPage();
+});
+
+/**
  * パラメータ初期化
  */
 (function () {
