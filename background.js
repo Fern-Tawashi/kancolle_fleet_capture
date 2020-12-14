@@ -83,7 +83,7 @@ var screenshot = {
 
       ctx.globalCompositeOperation = 'source-over';
       const img = new Image();
-      img.src = `./mask_image/progress_${num}.png`;
+      img.src = `/mask_image/progress_${num}.png`;
       img.onload = () => {
         ctx.drawImage(img, 0, 0, width, height);
         next_process();
@@ -250,7 +250,7 @@ chrome.runtime.onMessage.addListener((message) => {
     chrome.storage.local.get(key, (res) => {
       if (res[key]) {
         screenshot.order_number = true;
-        notifyPopup({ image: "./mask_image/nums_icon.png" });
+        notifyPopup({ image: "/mask_image/nums_icon.png" });
       }
     });
   }
@@ -261,7 +261,7 @@ chrome.runtime.onMessage.addListener((message) => {
     chrome.storage.local.set({ "current_view_type": 1 }, () => {
       clearCache();
       config.load();
-      notifyPopup({ image: "./mask_image/6xcap.png" });
+      notifyPopup({ image: "/mask_image/6xcap.png" });
       sendMessageTab({ type: "quickx6" });
     });
   }
@@ -418,7 +418,7 @@ function modeselect(num) {
 
   chrome.storage.local.set({ "current_view_type": new_view_type }, () => {
     console.log("save view_type: " + new_view_type);
-    const img_url = `./mask_image/modeselect_${new_view_type}.png`;
+    const img_url = `/mask_image/modeselect_${new_view_type}.png`;
     notifyPopup({ image: img_url });
     config.load();
   });

@@ -16,7 +16,7 @@ function loadMaskImage(view_type) {
       img.src = res[key];
     }
     else {
-      img.src = "./mask_image/mask_null.png";
+      img.src = "/mask_image/mask_null.png";
     }
   });
 }
@@ -34,7 +34,7 @@ function loadAdditionalImage() {
         img.src = res[key];
       }
       else {
-        img.src = "./mask_image/mask_null.png";
+        img.src = "/mask_image/mask_null.png";
       }
     }
   });
@@ -48,7 +48,7 @@ function loadNumberImage() {
       img.src = res[key];
     }
     else {
-      img.src = "./mask_image/num_null.png";
+      img.src = "/mask_image/num_null.png";
     }
   });
 }
@@ -156,7 +156,7 @@ document.getElementById('input_mask').addEventListener('change', (e) => {
   const current_view_type = document.querySelector("#view_list").value;
   const file = e.target.files[0];
   if (file.size > (1024 * 1024 * 1)) {
-    document.getElementById('mask_src').src = "./mask_image/regist_err.png";
+    document.getElementById('mask_src').src = "/mask_image/regist_err.png";
     return;
   }
 
@@ -184,7 +184,7 @@ document.getElementById('delmask').addEventListener('click', (e) => {
   chrome.storage.local.remove(key, () => {
     console.log("delete: " + key);
     const img = document.getElementById("mask_src");
-    img.src = "./mask_image/mask_null.png";
+    img.src = "/mask_image/mask_null.png";
   });
 });
 
@@ -226,7 +226,7 @@ document.querySelectorAll('button[name="deltag"]').forEach(btn => {
     const key = "additional_file_" + no;
     chrome.storage.local.remove(key, () => {
       console.log("delete: " + key);
-      img.src = "./mask_image/mask_null.png";
+      img.src = "/mask_image/mask_null.png";
     });
   });
 });
@@ -237,7 +237,7 @@ document.querySelectorAll('button[name="deltag"]').forEach(btn => {
 document.getElementById('input_num').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (file.size > (1024 * 1024 * 1)) {
-    document.querySelector('#num_src').src = "./mask_image/num_err.png";
+    document.querySelector('#num_src').src = "/mask_image/num_err.png";
     return;
   }
 
@@ -264,7 +264,7 @@ document.getElementById('delnum').addEventListener('click', (e) => {
   chrome.storage.local.remove(key, () => {
     console.log("delete: " + key);
     const img = document.getElementById("num_src");
-    img.src = "./mask_image/num_null.png";
+    img.src = "/mask_image/num_null.png";
   });
 });
 

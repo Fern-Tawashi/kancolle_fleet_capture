@@ -58,7 +58,7 @@
     div.setAttribute("style", styles.join(" "));
 
     const img = document.createElement('img');
-    img.src = img_src;
+    img.src = img_src || null_image;
     div.appendChild(img);
 
     document.querySelector('body').appendChild(div);
@@ -67,4 +67,7 @@
       div.remove();
     }, 1000);
   }
+
+  /** null対策画像 */
+  const null_image = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACAQMAAABIeJ9nAAAAB3RJTUUH5AwOAigSyU5iigAAABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8AAAAEZ0FNQQAAsY8L/GEFAAAABlBMVEX///8AAABVwtN+AAAAAWJLR0T/pQfyxQAAAAxJREFUeJxjmMFQAAACPAEJggzeRwAAAABJRU5ErkJggg==";
 })();
