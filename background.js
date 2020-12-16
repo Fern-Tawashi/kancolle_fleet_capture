@@ -441,10 +441,8 @@ chrome.pageAction.onClicked.addListener(() => {
   chrome.runtime.openOptionsPage();
 });
 
-/**
- * パラメータ初期化
- */
 (function () {
+  // パラメータ初期化
   chrome.storage.local.get("current_view_type", (res) => {
     console.log("load background: " + res.current_view_type);
     if (res.current_view_type == null) {
@@ -454,4 +452,29 @@ chrome.pageAction.onClicked.addListener(() => {
     }
     config.load();
   });
+
+  // 二重起動防止
+  const KANCOLLE_URL = [
+    "*://www.dmm.com/netgame/social/-/gadgets/=/app_id=854854/",
+    "*://www.dmm.com/netgame/social/-/gadgets/=/app_id=854854"
+    ];
+
+  chrome.webRequest.onBeforeRequest.addListener(onBeforeRequestDirect, {
+    'urls': KANCOLLE_URL
+  }, ['blocking']);
+
+  function onBeforeRequestDirect(detail) {
+    return new Promise((resolve) => {
+      chrome.tabs.query({ url: KANCOLLE_URL }, function (tabs) {
+        if (tabs.length > 0) {
+          chrome.windows.update(tabs[0].windowId, { focused: true });
+          chrome.tabs.update(tabs[0].id, { active: true });
+          resolve({ cancel: true });
+        }
+        else {
+          resolve({ cancel: false });
+        }
+      });
+    });
+  }
 })();

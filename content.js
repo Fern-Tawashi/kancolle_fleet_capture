@@ -22,6 +22,7 @@
   window.addEventListener('beforeunload', (event) => {
     event.preventDefault();
     event.returnValue = '';
+
     chrome.runtime.sendMessage({ type: "clear" });
   });
 
