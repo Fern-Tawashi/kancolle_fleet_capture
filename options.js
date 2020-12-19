@@ -59,10 +59,14 @@ function loadOther() {
       res["layout"] = 0;
     }
     document.querySelector('input[name="layout"][value="' + res["layout"] + '"]').checked = true;
+  });
 
-    chrome.storage.local.get("quick_delay", (res) => {
-      document.getElementById("delay").value = res.quick_delay;
-    });
+  chrome.storage.local.get("quick_delay", (res) => {
+    document.getElementById("delay").value = res.quick_delay;
+  });
+
+  chrome.storage.local.get("safety_mode", (res) => {
+    document.getElementById("safety").checked = (parseInt(res["safety_mode"]) === 1);
   });
 }
 
@@ -280,6 +284,16 @@ document.querySelector("form[name='delaytime']").addEventListener("submit", (e) 
       console.log("delay_time stored: " + quick_delay);
     });
   }
+});
+
+/**
+ * 安全モード
+ */
+document.getElementById("safety").addEventListener('change', (e) => {
+  const val = e.target.checked ? 1 : 0;
+  chrome.storage.local.set({ "safety_mode": val }, () => {
+    console.log("change safety_mode: " + val);
+  });
 });
 
 /**

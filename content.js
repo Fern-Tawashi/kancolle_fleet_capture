@@ -5,6 +5,9 @@
   /** キャンセル用 */
   var popup_timer_id = null;
 
+  /** 安全モード */
+  var is_safety = true;
+
   window.addEventListener("keydown", (event) => {
     if (!is_key_down) {
       is_key_down = true;
@@ -16,14 +19,19 @@
     is_key_down = false;
   });
 
-  /**
-   * 誤閉じ防止
-   */
-  window.addEventListener('beforeunload', (event) => {
-    event.preventDefault();
-    event.returnValue = '';
+  chrome.storage.local.get("safety_mode", (res) => {
+    is_safety = (parseInt(res.safety_mode) === 1);
+    chrome.runtime.sendMessage({ type: "safety", value: is_safety });
+    console.log("is_safety: " + is_safety);
+  });
 
-    chrome.runtime.sendMessage({ type: "clear" });
+  window.addEventListener('beforeunload', (event) => {
+    if (is_safety) {
+      // 誤閉じ防止
+      event.preventDefault();
+      event.returnValue = '';
+    }
+    chrome.runtime.sendMessage({ type: "clear" });//怪しい
   });
 
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
