@@ -6,13 +6,14 @@ var config = {
   horizontal_num: 3, // 編成横アイテム数
   vertical_num: 2,   // 編成縦アイテム数
   view_type: 1,
+  is_safety: true,
   ss_key: ['ss1', 'ss2', 'ss3', 'ss4', 'ss5', 'ss6'],
 
   /**
    * load直後に参照する場合は next_process を使う
    */
   load : function(next_process) {
-    chrome.storage.local.get(['layout', 'current_view_type'], (res) => {
+    chrome.storage.local.get(['layout', 'current_view_type', 'safety_mode'], (res) => {
       if (res.layout != null) {
         config.horizontal_num = (res.layout == 1) ? 2 : 3
         config.vertical_num = (res.layout == 1) ? 3 : 2
@@ -22,6 +23,8 @@ var config = {
         res.current_view_type = 1;
       }
       config.view_type = parseInt(res.current_view_type);
+
+      config.is_safety = (parseInt(res.safety_mode) === 1);
 
       const view_type_key = "view_type_" + res.current_view_type;
       chrome.storage.local.get(view_type_key, (res) => {
@@ -265,6 +268,10 @@ chrome.runtime.onMessage.addListener((message) => {
       sendMessageTab({ type: "quickx6" });
     });
   }
+  if (message.type === "safety") {
+    config.is_safety = message.value;
+    console.log("config.safety: " + message.value);
+  }
 });
 
 function sendMessageTab(param) {
@@ -448,9 +455,12 @@ chrome.pageAction.onClicked.addListener(() => {
     if (res.current_view_type == null) {
       chrome.storage.local.set(initial_data, () => {
         console.log("All parameter initialized");
+        config.load();
       });
     }
-    config.load();
+    else {
+      config.load();
+    }
   });
 
   // 二重起動防止
@@ -464,6 +474,10 @@ chrome.pageAction.onClicked.addListener(() => {
   }, ['blocking']);
 
   function onBeforeRequestDirect(detail) {
+    if (!config.is_safety) {
+      return { cancel: false };
+    }
+
     return new Promise((resolve) => {
       chrome.tabs.query({ url: KANCOLLE_URL }, function (tabs) {
         if (tabs.length > 0) {

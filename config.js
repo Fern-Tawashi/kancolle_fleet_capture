@@ -15,5 +15,6 @@ var initial_data = {
   additional_file_1: "./mask_image/fleet1.png",
   additional_file_2: "./mask_image/fleet2.png",
   number_file: "./mask_image/fleet_num.png",
-  quick_delay: 200
+  quick_delay: 200,
+  safety_mode: 1
 };
