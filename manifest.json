@@ -3,7 +3,7 @@
     "manifest_version": 2,
     "name": "Kancolle fleet capture",
     "homepage_url": "https://twitter.com/mtm13th",
-    "version": "2.0",
+    "version": "2.0.5",
     "icons": {
         "48": "icon/icon.svg",
         "96": "icon/icon.svg"
@@ -22,8 +22,7 @@
                 "event.js",
                 "content.js"
             ],
-            "run_at": "document_end",
-            "all_frames": true
+            "run_at": "document_start"
         },
         {
             "matches": [

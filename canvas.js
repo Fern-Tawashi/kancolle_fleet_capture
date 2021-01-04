@@ -54,7 +54,7 @@
 
         const edit = document.querySelector('#r_editbox');
         const edit_text = edit ? edit.value : "";
-        console.log("r_editbox:" + edit.value);
+        //console.log("r_editbox:" + edit.value);
 
         chrome.runtime.sendMessage({ type: "image_data", data: image_data, mode: request.mode, text: edit_text });
       });

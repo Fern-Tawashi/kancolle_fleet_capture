@@ -3,28 +3,21 @@ var config = {
   y: 0,
   width: 1200,
   height: 720,
-  horizontal_num: 3, // 編成横アイテム数
-  vertical_num: 2,   // 編成縦アイテム数
+  layout_type: 0,
   view_type: 1,
-  is_safety: true,
   ss_key: ['ss1', 'ss2', 'ss3', 'ss4', 'ss5', 'ss6'],
 
   /**
    * load直後に参照する場合は next_process を使う
    */
-  load : function(next_process) {
+  load: function(next_process) {
     chrome.storage.local.get(['layout', 'current_view_type', 'safety_mode'], (res) => {
-      if (res.layout != null) {
-        config.horizontal_num = (res.layout == 1) ? 2 : 3
-        config.vertical_num = (res.layout == 1) ? 3 : 2
-      }
+      config.layout_type = parseInt(res.layout || 0);
 
       if (res.current_view_type == null) {
         res.current_view_type = 1;
       }
       config.view_type = parseInt(res.current_view_type);
-
-      config.is_safety = (parseInt(res.safety_mode) === 1);
 
       const view_type_key = "view_type_" + res.current_view_type;
       chrome.storage.local.get(view_type_key, (res) => {
@@ -34,12 +27,21 @@ var config = {
           config.x = parseInt(res[view_type_key].x);
           config.y = parseInt(res[view_type_key].y);
         }
-        console.log("config: " + config.view_type + ", " + config.horizontal_num + "x" + config.vertical_num + ", " + config.width + "x" + config.height + ", " + config.x + "x" + config.y);
+        console.log("config.layout_type: " + config.layout_type);
+        console.log("config: " + config.view_type + ", " + config.getLayoutNumHorizontal() + "x" + config.getLayoutNumVertical() + ", " + config.width + "x" + config.height + ", " + config.x + "x" + config.y);
         if (next_process != null) {
           next_process();
         }
       });
     });
+  },
+  // 画像配置数：横
+  getLayoutNumHorizontal: function () {
+    return (config.layout_type) == 1 ? 2 : 3;
+  },
+  // 画像配置数：縦
+  getLayoutNumVertical: function () {
+    return (config.layout_type) == 1 ? 3 : 2;
   }
 };
 
@@ -52,8 +54,8 @@ var screenshot = {
   order_number: false,
   init: function () {
     const num = screenshot.image_max_count;
-    const col = (num > config.horizontal_num) ? config.horizontal_num : num;
-    const row = Math.floor((num - 1) / config.horizontal_num) + 1;
+    const col = (num > config.getLayoutNumHorizontal()) ? config.getLayoutNumHorizontal() : num;
+    const row = Math.floor((num - 1) / config.getLayoutNumHorizontal()) + 1;
     screenshot.content.width = config.width * col;
     screenshot.content.height = config.height * row;
     screenshot.image_add_count = 0;
@@ -106,7 +108,7 @@ var screenshot = {
 
         setImage(() => {
           screenshot.image_add_count++;
-          console.log("add|order: " + screenshot.image_add_count + " === " + (order + 1));
+          //console.log("add|order: " + screenshot.image_add_count + " === " + (order + 1));
 
           //最大枚数に達したら強制DL
           if (screenshot.image_add_count >= screenshot.image_max_count) {
@@ -122,8 +124,8 @@ var screenshot = {
          * 画像配置
          */
         function setImage(next_process) {
-          const col = order % config.horizontal_num;
-          const row = Math.floor(order / config.horizontal_num);
+          const col = order % config.getLayoutNumHorizontal();
+          const row = Math.floor(order / config.getLayoutNumHorizontal());
           const dx = config.width * col;
           const dy = config.height * row;
           context.drawImage(img, dx, dy);
@@ -233,6 +235,15 @@ chrome.runtime.onMessage.addListener((message) => {
     screenshot.addition_image = 0;
     screenshot.order_number = false;
   }
+  if (message.type === "layout") {
+    const layout = (config.layout_type == 1) ? 0 : 1;
+    chrome.storage.local.set({ "layout": layout }, () => {
+      config.layout_type = layout;
+      console.log("save layout_type: " + layout);
+      const img_url = `/mask_image/layout_${layout}.png`;
+      notifyPopup({ image: img_url });
+    });
+  }
   if (message.type === "modeselect") {
     clearCache();
     screenshot.addition_image = 0;
@@ -257,20 +268,39 @@ chrome.runtime.onMessage.addListener((message) => {
       }
     });
   }
-  if (message.type === "clear") {
-    clearCache();
-  }
   if (message.type === "quickx6") {
     chrome.storage.local.set({ "current_view_type": 1 }, () => {
       clearCache();
       config.load();
-      notifyPopup({ image: "/mask_image/6xcap.png" });
+      const img_url = `/mask_image/6xcap_${config.layout_type}.png`;
+      notifyPopup({ image: img_url });
       sendMessageTab({ type: "quickx6" });
     });
   }
   if (message.type === "safety") {
-    config.is_safety = message.value;
-    console.log("config.safety: " + message.value);
+    if (chrome.webRequest.onBeforeRequest.hasListener(onBeforeRequestDirect)) {
+      if (!message.value) {
+        // 多重起動防止 - 無効
+        console.log("onBeforeRequest disable");
+        chrome.webRequest.onBeforeRequest.removeListener(onBeforeRequestDirect);
+      }
+    }
+    else {
+      if (message.value) {
+        // 多重起動防止 - 有効
+        console.log("onBeforeRequest enable");
+        chrome.webRequest.onBeforeRequest.addListener(onBeforeRequestDirect, {
+          'urls': KANCOLLE_URL
+        }, ['blocking']);
+      }
+    }
+  }
+  if (message.type === "close") {
+    clearCache();
+    if (chrome.webRequest.onBeforeRequest.hasListener(onBeforeRequestDirect)) {
+      console.log("onBeforeRequest disable");
+      chrome.webRequest.onBeforeRequest.removeListener(onBeforeRequestDirect);
+    }
   }
 });
 
@@ -448,12 +478,27 @@ chrome.pageAction.onClicked.addListener(() => {
   chrome.runtime.openOptionsPage();
 });
 
+function onBeforeRequestDirect() {
+  return new Promise((resolve) => {
+    chrome.tabs.query({ url: KANCOLLE_URL }, function (tabs) {
+      if (tabs.length > 0) {
+        chrome.windows.update(tabs[0].windowId, { focused: true });
+        chrome.tabs.update(tabs[0].id, { active: true });
+        resolve({ cancel: true });
+      }
+      else {
+        resolve({ cancel: false });
+      }
+    });
+  });
+}
+
 (function () {
   // パラメータ初期化
   chrome.storage.local.get("current_view_type", (res) => {
     console.log("load background: " + res.current_view_type);
     if (res.current_view_type == null) {
-      chrome.storage.local.set(initial_data, () => {
+      chrome.storage.local.set(INITIAL_DATA, () => {
         console.log("All parameter initialized");
         config.load();
       });
@@ -462,33 +507,4 @@ chrome.pageAction.onClicked.addListener(() => {
       config.load();
     }
   });
-
-  // 二重起動防止
-  const KANCOLLE_URL = [
-    "*://www.dmm.com/netgame/social/-/gadgets/=/app_id=854854/",
-    "*://www.dmm.com/netgame/social/-/gadgets/=/app_id=854854"
-    ];
-
-  chrome.webRequest.onBeforeRequest.addListener(onBeforeRequestDirect, {
-    'urls': KANCOLLE_URL
-  }, ['blocking']);
-
-  function onBeforeRequestDirect(detail) {
-    if (!config.is_safety) {
-      return { cancel: false };
-    }
-
-    return new Promise((resolve) => {
-      chrome.tabs.query({ url: KANCOLLE_URL }, function (tabs) {
-        if (tabs.length > 0) {
-          chrome.windows.update(tabs[0].windowId, { focused: true });
-          chrome.tabs.update(tabs[0].id, { active: true });
-          resolve({ cancel: true });
-        }
-        else {
-          resolve({ cancel: false });
-        }
-      });
-    });
-  }
 })();

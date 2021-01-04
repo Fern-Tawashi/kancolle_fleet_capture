@@ -76,7 +76,7 @@ function loadOther() {
 function loadDefault(next_process) {
   chrome.storage.local.clear(() => {
     console.log("cleared all storage");
-    chrome.storage.local.set(initial_data, () => {
+    chrome.storage.local.set(INITIAL_DATA, () => {
       console.log("initialized all parameter");
       next_process();
     });
@@ -139,7 +139,7 @@ document.getElementById("view_list").addEventListener('change', (e) => {
   loadCoord(view_type);
   loadMaskImage(view_type);
   chrome.storage.local.set({ "current_view_type": view_type }, () => {
-    console.log("change current_view_type: " + view_type);
+    console.log("save current_view_type: " + view_type);
   });
   chrome.runtime.sendMessage({ type: "reset" });
 });
@@ -148,7 +148,7 @@ document.querySelectorAll('input[name="layout"]').forEach(div => {
   div.addEventListener('change', function (e) {
     const layout = e.target.value;
     chrome.storage.local.set({ "layout": layout }, () => {
-      console.log("layout: " + layout);
+      console.log("save layout: " + layout);
     });
   });
 });
