@@ -2,8 +2,8 @@
     "description": "ブラウザゲーム「艦隊これくしょん」の艦娘詳細をキャプチャ＆連結して生成します",
     "manifest_version": 2,
     "name": "Kancolle fleet capture",
-    "homepage_url": "https://twitter.com/mtm13th",
-    "version": "2.0.5",
+    "homepage_url": "https://fern.hateblo.jp/",
+    "version": "2.0.6",
     "icons": {
         "48": "icon/icon.svg",
         "96": "icon/icon.svg"

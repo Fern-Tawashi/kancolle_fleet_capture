@@ -13,12 +13,7 @@ var config = {
   load: function(next_process) {
     chrome.storage.local.get(['layout', 'current_view_type', 'safety_mode'], (res) => {
       config.layout_type = parseInt(res.layout || 0);
-
-      if (res.current_view_type == null) {
-        res.current_view_type = 1;
-      }
-      config.view_type = parseInt(res.current_view_type);
-
+      config.view_type = parseInt(res.current_view_type || 1);
       const view_type_key = "view_type_" + res.current_view_type;
       chrome.storage.local.get(view_type_key, (res) => {
         if (res[view_type_key] != null) {
@@ -271,10 +266,11 @@ chrome.runtime.onMessage.addListener((message) => {
   if (message.type === "quickx6") {
     chrome.storage.local.set({ "current_view_type": 1 }, () => {
       clearCache();
-      config.load();
-      const img_url = `/mask_image/6xcap_${config.layout_type}.png`;
-      notifyPopup({ image: img_url });
-      sendMessageTab({ type: "quickx6" });
+      config.load(() => {
+        const img_url = `/mask_image/6xcap_${config.layout_type}.png`;
+        notifyPopup({ image: img_url });
+        sendMessageTab({ type: "quickx6" });
+      });
     });
   }
   if (message.type === "safety") {
@@ -376,7 +372,7 @@ function saveLocalOne(image_data) {
   screenshot.capture_count++;
   const key = "ss" + screenshot.capture_count;
   chrome.storage.local.set({ [key]: image_data }, () => {
-    console.log("save local: " + key);
+    //console.log("save local: " + key);
     notifyPopup( { image: image_data, num: screenshot.capture_count } );
   });
 }
@@ -387,21 +383,23 @@ function createImage() {
     return;
   }
 
-  screenshot.image_max_count = screenshot.capture_count;
-  screenshot.init();
+  config.load(() => {
+    screenshot.image_max_count = screenshot.capture_count;
+    screenshot.init();
 
-  chrome.storage.local.get(config.ss_key, (item) => {
-    let funcs = [];
-    let order = 0;
-    for (let i in item) {
-      funcs.push(screenshot.addImage(item[i], order++));
-    }
+    chrome.storage.local.get(config.ss_key, (item) => {
+      const funcs = [];
+      let order = 0;
+      for (let i in item) {
+        funcs.push(screenshot.addImage(item[i], order++));
+      }
 
-    Promise.all(funcs).then(() => {
-      clearCache();
+      Promise.all(funcs).then(() => {
+        clearCache();
 
-      screenshot.addition_image = 0;
-      screenshot.order_number = false;
+        screenshot.addition_image = 0;
+        screenshot.order_number = false;
+      });
     });
   });
 }

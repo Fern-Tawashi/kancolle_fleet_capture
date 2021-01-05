@@ -55,10 +55,8 @@ function loadNumberImage() {
 
 function loadOther() {
   chrome.storage.local.get(["layout"], (res) => {
-    if (res["layout"] == null) {
-      res["layout"] = 0;
-    }
-    document.querySelector('input[name="layout"][value="' + res["layout"] + '"]').checked = true;
+    const layout = res["layout"] || 0;
+    document.querySelector('input[name="layout"][value="' + layout + '"]').checked = true;
   });
 
   chrome.storage.local.get("quick_delay", (res) => {
