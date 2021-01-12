@@ -12,8 +12,11 @@ function key_input_event(code) {
   if (code === 'KeyW') { // 'W'
     chrome.runtime.sendMessage({ type: "number" });
   }
-if (code === 'KeyQ') { // 'q'
+  if (code === 'KeyQ') { // 'q'
     chrome.runtime.sendMessage({ type: "quickx6" });
+  }
+  if (code === 'KeyR') { // 'r'
+    chrome.runtime.sendMessage({ type: "layout" });
   }
   if (code === 'BracketRight') { // '['
     chrome.runtime.sendMessage({ type: "modeselect", num: -1 });

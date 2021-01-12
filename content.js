@@ -19,19 +19,22 @@
     is_key_down = false;
   });
 
-  chrome.storage.local.get("safety_mode", (res) => {
-    is_safety = (parseInt(res.safety_mode) === 1);
-    chrome.runtime.sendMessage({ type: "safety", value: is_safety });
-    console.log("is_safety: " + is_safety);
-  });
-
   window.addEventListener('beforeunload', (event) => {
     if (is_safety) {
       // 誤閉じ防止
       event.preventDefault();
       event.returnValue = '';
     }
-    chrome.runtime.sendMessage({ type: "clear" });//怪しい
+  });
+
+  window.addEventListener('unload', (event) => {
+    chrome.runtime.sendMessage({ type: "close" });
+  });
+
+  chrome.storage.local.get("safety_mode", (res) => {
+    is_safety = (parseInt(res.safety_mode) === 1);
+    chrome.runtime.sendMessage({ type: "safety", value: is_safety });
+    console.log("content is_safety: " + is_safety);
   });
 
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {

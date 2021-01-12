@@ -1,5 +1,7 @@
-var initial_data = {
+// 初期化用パラメータ
+var INITIAL_DATA = {
   current_view_type: 1,
+  layout: 0,
   view_type_1: { w: 724, h: 560, x: 471, y: 145 },
   view_type_2: { w: 318, h: 354, x: 882, y: 145 },
   view_type_3: { w: 480, h: 456, x: 718, y: 211 },
@@ -16,5 +18,11 @@ var initial_data = {
   additional_file_2: "./mask_image/fleet2.png",
   number_file: "./mask_image/fleet_num.png",
   quick_delay: 200,
-  safety_mode: 1
+  safety_mode: 0
 };
+
+// 多重起動防止対象URL
+var KANCOLLE_URL = [
+  "*://www.dmm.com/netgame/social/-/gadgets/=/app_id=854854/",
+  "*://www.dmm.com/netgame/social/-/gadgets/=/app_id=854854"
+];
