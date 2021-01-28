@@ -1,3 +1,5 @@
+var port_data;
+
 var config = {
   x: 0,
   y: 0,
@@ -298,6 +300,10 @@ chrome.runtime.onMessage.addListener((message) => {
       chrome.webRequest.onBeforeRequest.removeListener(onBeforeRequestDirect);
     }
   }
+  if (message.type === "portdata") {
+    notifyPopup({ image: "/mask_image/portdata.png" });
+    navigator.clipboard.writeText(port_data);
+  }
 });
 
 function sendMessageTab(param) {
@@ -490,6 +496,45 @@ function onBeforeRequestDirect() {
     });
   });
 }
+
+/**
+ * portdata取得
+ */
+function parseResponseBody(details) {
+  const filter = browser.webRequest.filterResponseData(details.requestId);
+  let data = [];
+
+  filter.ondata = event => {
+    filter.write(event.data);
+    data.push(event.data);
+  }
+
+  filter.onstop = event => {
+    filter.close();
+
+    const decoder = new TextDecoder("utf-8");
+    let joined_text = "";
+
+    for (let buf of data) {
+      const str = decoder.decode(buf, { stream: true });
+      //console.log(str.length);
+      joined_text += str;
+    }
+
+    const svdata = JSON.parse(joined_text.split('=')[1]);
+    const filter_1 = v => v.api_locked;
+    const svdata_filtered = svdata.api_data.api_ship.filter(filter_1);
+    port_data = JSON.stringify(svdata_filtered, ['api_ship_id', 'api_lv', 'api_kyouka', 'api_exp']);
+  }
+
+  return {};
+}
+
+browser.webRequest.onBeforeRequest.addListener(
+  parseResponseBody,
+  { urls: ["http://*/kcsapi/api_port/port"], types: ["xmlhttprequest"] },
+  ['blocking']
+);
 
 (function () {
   // パラメータ初期化

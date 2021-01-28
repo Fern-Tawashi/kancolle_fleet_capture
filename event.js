@@ -18,6 +18,9 @@ function key_input_event(code) {
   if (code === 'KeyR') { // 'r'
     chrome.runtime.sendMessage({ type: "layout" });
   }
+  if (code === 'KeyC') { // 'c'
+    chrome.runtime.sendMessage({ type: "portdata" });
+  }
   if (code === 'BracketRight') { // '['
     chrome.runtime.sendMessage({ type: "modeselect", num: -1 });
   }

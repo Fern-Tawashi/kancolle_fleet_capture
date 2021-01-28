@@ -3,7 +3,7 @@
     "manifest_version": 2,
     "name": "Kancolle fleet capture",
     "homepage_url": "https://fern.hateblo.jp/",
-    "version": "2.0.6",
+    "version": "2.0.8",
     "icons": {
         "48": "icon/icon.svg",
         "96": "icon/icon.svg"
@@ -26,7 +26,7 @@
         },
         {
             "matches": [
-                "*://*/kcs2/index.php*"
+                "http://*/kcs2/index.php?*"
             ],
             "js": [
                 "event.js",
@@ -52,11 +52,13 @@
 
     "permissions": [
         "<all_urls>",
+        "http://www.dmm.com/",
         "downloads",
         "storage",
         "unlimitedStorage",
         "tabs",
         "webRequest",
-        "webRequestBlocking"
+        "webRequestBlocking",
+        "clipboardWrite"
     ]
 }
