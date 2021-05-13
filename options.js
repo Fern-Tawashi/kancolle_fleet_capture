@@ -63,6 +63,10 @@ function loadOther() {
     document.getElementById("delay").value = res.quick_delay;
   });
 
+  chrome.storage.local.get("dl_file_name", (res) => {
+    document.getElementById("dl_file_name").value = res.dl_file_name;
+  });
+
   chrome.storage.local.get("safety_mode", (res) => {
     document.getElementById("safety").checked = (parseInt(res["safety_mode"]) === 1);
   });
@@ -281,6 +285,26 @@ document.querySelector("form[name='delaytime']").addEventListener("submit", (e) 
     chrome.storage.local.set({ "quick_delay": quick_delay }, () => {
       console.log("delay_time stored: " + quick_delay);
     });
+  }
+});
+
+/**
+ * DLファイル名保存
+ */
+document.querySelector("form[name='filename']").addEventListener("submit", (e) => {
+  event.preventDefault();
+
+  const dl_file_name = document.getElementById("dl_file_name").value;
+  if (dl_file_name) {
+    if (!dl_file_name.match(/^.*[(\\|/|:|\*|?|\"|<|>|\|)].*$/)) {
+      chrome.storage.local.set({ "dl_file_name": dl_file_name }, () => {
+        document.getElementById("filename_err").innerText = "";
+        console.log("dl_file_name stored: " + dl_file_name);
+      });
+    }
+    else {
+      document.getElementById("filename_err").innerText = "ファイル名に使用出来ない文字が含まれています";
+    }
   }
 });
 

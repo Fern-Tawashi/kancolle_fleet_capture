@@ -423,9 +423,12 @@ function dataURItoBlob(dataURI) {
  * Download image
  */
 function downloadImage(image_data) {
-  chrome.downloads.download({
-    'url': URL.createObjectURL(dataURItoBlob(image_data)),
-    'filename': 'myfleet.png',
+  chrome.storage.local.get("dl_file_name", (res) => {
+    const fname = formatDate(new Date(), res.dl_file_name);
+    chrome.downloads.download({
+      'url': URL.createObjectURL(dataURItoBlob(image_data)),
+      'filename': fname + '.png',
+    });
   });
 }
 
@@ -467,6 +470,17 @@ function notifyPopup(option) {
     option.image = res;
     sendMessageTab({ type: "popup", data: option });
   });
+}
+
+// 日付変換用
+function formatDate(date, format) {
+  format = format.replace(/%Y/g, date.getFullYear());
+  format = format.replace(/%M/g, ('0' + (date.getMonth() + 1)).slice(-2));
+  format = format.replace(/%D/g, ('0' + date.getDate()).slice(-2));
+  format = format.replace(/%h/g, ('0' + date.getHours()).slice(-2));
+  format = format.replace(/%m/g, ('0' + date.getMinutes()).slice(-2));
+  format = format.replace(/%s/g, ('0' + date.getSeconds()).slice(-2));
+  return format;
 }
 
 /**
