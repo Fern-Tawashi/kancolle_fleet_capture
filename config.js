@@ -18,7 +18,8 @@ var INITIAL_DATA = {
   additional_file_2: "./mask_image/fleet2.png",
   number_file: "./mask_image/fleet_num.png",
   quick_delay: 200,
-  safety_mode: 0
+  safety_mode: 0,
+  dl_file_name: "myfleet_%Y%M%D"
 };
 
 // ‘½d‹N“®–h~‘ÎÛURL
