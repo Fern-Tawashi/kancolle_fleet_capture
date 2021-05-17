@@ -1,3 +1,6 @@
+// 二重起動防止用
+var kancolle_tab = null;
+
 var config = {
   x: 0,
   y: 0,
@@ -274,29 +277,12 @@ chrome.runtime.onMessage.addListener((message) => {
     });
   }
   if (message.type === "safety") {
-    if (chrome.webRequest.onBeforeRequest.hasListener(onBeforeRequestDirect)) {
-      if (!message.value) {
-        // 多重起動防止 - 無効
-        console.log("onBeforeRequest disable");
-        chrome.webRequest.onBeforeRequest.removeListener(onBeforeRequestDirect);
-      }
-    }
-    else {
-      if (message.value) {
-        // 多重起動防止 - 有効
-        console.log("onBeforeRequest enable");
-        chrome.webRequest.onBeforeRequest.addListener(onBeforeRequestDirect, {
-          'urls': KANCOLLE_URL
-        }, ['blocking']);
-      }
-    }
+    console.log("safety ---> " + message.value);
+    setProhibitDupeTab(message.value);
   }
   if (message.type === "close") {
     clearCache();
-    if (chrome.webRequest.onBeforeRequest.hasListener(onBeforeRequestDirect)) {
-      console.log("onBeforeRequest disable");
-      chrome.webRequest.onBeforeRequest.removeListener(onBeforeRequestDirect);
-    }
+    setProhibitDupeTab(false);
   }
 });
 
@@ -472,6 +458,111 @@ function notifyPopup(option) {
   });
 }
 
+/**
+ * page_action
+ */
+chrome.pageAction.onClicked.addListener(() => {
+  chrome.runtime.openOptionsPage();
+});
+
+/**
+ * chrome専用
+ */
+
+/* manifest に declarativeContent 指定必要
+chrome.runtime.onInstalled.addListener(function () {
+  // Replace all rules ...
+  chrome.declarativeContent.onPageChanged.removeRules(undefined, function () {
+    // With a new rule ...
+    chrome.declarativeContent.onPageChanged.addRules([
+      {
+        // That fires when a page's URL contains a 'g' ...
+        conditions: [
+          new chrome.declarativeContent.PageStateMatcher({
+            pageUrl: { urlContains: 'www.dmm.com' },
+          })
+        ],
+        // And shows the extension's page action.
+        actions: [new chrome.declarativeContent.ShowPageAction()]
+      }
+    ]);
+  });
+});
+*/
+
+//
+// 多重起動試験中
+//
+function onUpdatedListener(tabId, changeInfo, tab) {
+  if (changeInfo.status === 'complete') {
+    if (tab.url.search(KANCOLLE_URL_REGEX) != -1) {
+      //console.log("update: " + tab.id);
+      if (!kancolle_tab) {
+        kancolle_tab = tab;
+      }
+    }
+  }
+}
+
+function onRemovedListener(tabId) {
+  if (kancolle_tab && kancolle_tab.id === tabId) {
+    //console.log("delete: " + tabId);
+    kancolle_tab = null;
+  }
+}
+
+function onBeforeRequestDirect() {
+  if (kancolle_tab) {
+    chrome.windows.update(kancolle_tab.windowId, { focused: true });
+    chrome.tabs.update(kancolle_tab.id, { active: true });
+    return { cancel: true };
+  }
+  return { cancel: false };
+}
+
+function setProhibitDupeTab(is_valid) {
+  //console.log("setProhibitDupeTab : " + is_valid);
+
+  if (is_valid) {
+    chrome.tabs.query({ url: KANCOLLE_URL }, function (tabs) {
+      if (tabs.length > 0) {
+        //console.log("new: " + tabs[0].id);
+        kancolle_tab = tabs[0];
+      }
+    });
+
+    if (!chrome.tabs.onRemoved.hasListener(onRemovedListener)) {
+      //console.log("onRemoved.addListener");
+      chrome.tabs.onRemoved.addListener(onRemovedListener);
+    }
+    if (!chrome.tabs.onUpdated.hasListener(onUpdatedListener)) {
+      //console.log("onUpdated.addListener");
+      chrome.tabs.onUpdated.addListener(onUpdatedListener);
+    }
+    if (!chrome.webRequest.onBeforeRequest.hasListener(onBeforeRequestDirect)) {
+      //console.log("onBeforeRequest.addListener");
+      chrome.webRequest.onBeforeRequest.addListener(onBeforeRequestDirect, {
+        'urls': KANCOLLE_URL
+      }, ['blocking']);
+    }
+  }
+  else {
+    if (chrome.tabs.onRemoved.hasListener(onRemovedListener)) {
+      //console.log("onRemoved.removeListener");
+      chrome.tabs.onRemoved.removeListener(onRemovedListener);
+    }
+    if (chrome.tabs.onUpdated.hasListener(onUpdatedListener)) {
+      //console.log("onUpdated.removeListener");
+      chrome.tabs.onUpdated.removeListener(onUpdatedListener);
+    }
+    if (chrome.webRequest.onBeforeRequest.hasListener(onBeforeRequestDirect)) {
+      //console.log("onBeforeRequest.removeListener");
+      chrome.webRequest.onBeforeRequest.removeListener(onBeforeRequestDirect);
+    }
+    kancolle_tab = null;
+  }
+}
+
 // 日付変換用
 function formatDate(date, format) {
   format = format.replace(/%Y/g, date.getFullYear());
@@ -481,29 +572,7 @@ function formatDate(date, format) {
   format = format.replace(/%m/g, ('0' + date.getMinutes()).slice(-2));
   format = format.replace(/%s/g, ('0' + date.getSeconds()).slice(-2));
   return format;
-}
-
-/**
- * page_action
- */
-chrome.pageAction.onClicked.addListener(() => {
-  chrome.runtime.openOptionsPage();
-});
-
-function onBeforeRequestDirect() {
-  return new Promise((resolve) => {
-    chrome.tabs.query({ url: KANCOLLE_URL }, function (tabs) {
-      if (tabs.length > 0) {
-        chrome.windows.update(tabs[0].windowId, { focused: true });
-        chrome.tabs.update(tabs[0].id, { active: true });
-        resolve({ cancel: true });
-      }
-      else {
-        resolve({ cancel: false });
-      }
-    });
-  });
-}
+};
 
 (function () {
   // パラメータ初期化

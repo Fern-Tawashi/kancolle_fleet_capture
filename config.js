@@ -27,3 +27,5 @@ var KANCOLLE_URL = [
   "*://www.dmm.com/netgame/social/-/gadgets/=/app_id=854854/",
   "*://www.dmm.com/netgame/social/-/gadgets/=/app_id=854854"
 ];
+
+var KANCOLLE_URL_REGEX = /^http:\/\/www\.dmm\.com\/netgame\/social\/-\/gadgets\/=\/app_id=854854\/?$/;
