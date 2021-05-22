@@ -36,4 +36,10 @@ function key_input_event(code) {
   if (code === 'Digit4') { // '4'
     chrome.runtime.sendMessage({ type: "addition", num: 4 });
   }
+  if (code === 'Digit5') { // '5'
+    chrome.runtime.sendMessage({ type: "addition", num: 5 });
+  }
+  if (code === 'Digit6') { // '6'
+    chrome.runtime.sendMessage({ type: "addition", num: 6 });
+  }
 }
