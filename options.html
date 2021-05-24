@@ -60,9 +60,9 @@
     <hr />
 
     <div>
-        <label>六隻配置: </label>
-        <input type="radio" name="layout" id="layout_0" value="0" /><label for="layout_0">3x2</label>
-        <input type="radio" name="layout" id="layout_1" value="1" /><label for="layout_1">2x3</label>
+        <label>画像列数: </label>
+        <input type="radio" name="layout" id="layout_0" value="0" /><label for="layout_0">3列</label>
+        <input type="radio" name="layout" id="layout_1" value="1" /><label for="layout_1">2列</label>
     </div>
 
     <hr />
@@ -132,6 +132,30 @@
                 <input type="file" accept="image/png" name="input_tag" data-no="4">
             </div>
         </div>
+
+        <div style="display: inline-block;">
+            <p>[5]キーで追加される画像（3MBまで）</p>
+            <div>
+                <img align="top" src="./mask_image/mask_null.png" id="tagsrc_5" style="height:160px;" />
+                <button type="button" name="deltag" data-no="5"><span style="font-weight:bold;">x</span></button>
+            </div>
+
+            <div style="color:blue">
+                <input type="file" accept="image/png" name="input_tag" data-no="5">
+            </div>
+        </div>
+
+        <div style="display: inline-block;">
+            <p>[6]キーで追加される画像（3MBまで）</p>
+            <div>
+                <img align="top" src="./mask_image/mask_null.png" id="tagsrc_6" style="height:160px;" />
+                <button type="button" name="deltag" data-no="6"><span style="font-weight:bold;">x</span></button>
+            </div>
+
+            <div style="color:blue">
+                <input type="file" accept="image/png" name="input_tag" data-no="6">
+            </div>
+        </div>
     </div>
 
     <hr />
@@ -179,9 +203,9 @@
     <form name="safety">
         <div>
             <p>
-                <label for="safety">セッション切れ対策</label>
+                <label for="safety">セッション切れ防止</label>
                 <input type="checkbox" id="safety" value="0" checked>
-                （二重起動抑制＋URL遷移前に確認ダイアログ）
+                （URL遷移や二重起動の防止）
                 <span style="color:red;">※この変更は次回ゲーム起動時に反映</span>
             </p>
         </div>

@@ -1,3 +1,5 @@
+const MAX_IMAGE_COUNT = 7;
+
 var config = {
   x: 0,
   y: 0,
@@ -5,7 +7,7 @@ var config = {
   height: 720,
   layout_type: 0,
   view_type: 1,
-  ss_key: ['ss1', 'ss2', 'ss3', 'ss4', 'ss5', 'ss6'],
+  ss_key: ['ss1', 'ss2', 'ss3', 'ss4', 'ss5', 'ss6', 'ss7', 'ss8', 'ss9'],
 
   /**
    * load直後に参照する場合は next_process を使う
@@ -23,7 +25,7 @@ var config = {
           config.y = parseInt(res[view_type_key].y);
         }
         console.log("config.layout_type: " + config.layout_type);
-        console.log("config: " + config.view_type + ", " + config.getLayoutNumHorizontal() + "x" + config.getLayoutNumVertical() + ", " + config.width + "x" + config.height + ", " + config.x + "x" + config.y);
+        console.log("config: " + config.view_type + ", " + config.getLayoutNumHorizontal() + ", " + config.width + "x" + config.height + ", " + config.x + "x" + config.y);
         if (next_process != null) {
           next_process();
         }
@@ -32,11 +34,7 @@ var config = {
   },
   // 画像配置数：横
   getLayoutNumHorizontal: function () {
-    return (config.layout_type) == 1 ? 2 : 3;
-  },
-  // 画像配置数：縦
-  getLayoutNumVertical: function () {
-    return (config.layout_type) == 1 ? 3 : 2;
+    return [3, 2][config.layout_type];
   }
 };
 
@@ -175,7 +173,7 @@ var screenshot = {
               const img = new Image();
               img.src = res[key];
               img.onload = () => {
-                const w = Math.floor(img.width / 6);
+                const w = Math.floor(img.width / 9);
                 const x = order * w;
                 const dx = right_bottom_x - w - MARGIN;
                 const dy = right_bottom_y - img.height - MARGIN;
@@ -210,7 +208,7 @@ chrome.runtime.onMessage.addListener((message) => {
   }
   if (message.type === "image_data") {
     if (message.mode === "add") {
-      if (screenshot.capture_count >= 6) {
+      if (screenshot.capture_count >= MAX_IMAGE_COUNT) {
         createImage();
       }
       else {

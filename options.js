@@ -22,7 +22,7 @@ function loadMaskImage(view_type) {
 }
 
 function loadAdditionalImage() {
-  const nums = [1, 2, 3, 4];
+  const nums = [1, 2, 3, 4, 5, 6];
   const STORAGE_KEY_PREFIX = "additional_file_";
   const keys = nums.map(n => STORAGE_KEY_PREFIX + n);
 

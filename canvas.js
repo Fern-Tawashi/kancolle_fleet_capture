@@ -10,7 +10,7 @@
     { x: 944, y: 637 },
   ];
 
-  const max_quick_capture = 6;
+  const max_quick_capture = 7;
 
   let capture_count = 0;
   let invalid_click_count = 0; // キャプチャ無効クリック数
